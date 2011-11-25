@@ -1,0 +1,11 @@
+[general]
+name=pgRouting Layer
+description=Dockable widget that adds pgRouting layers
+version=Version 0.1
+qgisMinimumVersion=1.7.0
+authorName=Anita Graser
+icon=icon.png
+experimental=True
+homepage=http://underdark.wordpress.com/
+tracker=None
+repository=None
