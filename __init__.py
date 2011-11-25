@@ -32,6 +32,5 @@ def icon():
 def qgisMinimumVersion():
     return "1.7"
 def classFactory(iface):
-    # load PostgisLayer class from file PostgisLayer
     from pgRoutingLayer import PgRoutingLayer
     return PgRoutingLayer(iface)
