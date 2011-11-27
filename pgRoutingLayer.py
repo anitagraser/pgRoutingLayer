@@ -27,9 +27,6 @@ from qgis.core import *
 import dbConnection
 #import highlighter as hl
 import os
-#import resources
-
-# Initialize Qt resources from file resources.py
 
 conn = dbConnection.ConnectionManager()
 
@@ -44,12 +41,10 @@ class PgRoutingLayer:
         self.iface.addPluginToDatabaseMenu("&pgRouting Layer", self.action)
         #self.iface.addToolBarIcon(self.action)
         
-        
         #load the form  
         path = os.path.dirname(os.path.abspath(__file__))
         self.dock = uic.loadUi(os.path.join(path, "ui_pgRoutingLayer.ui"))
         self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dock)        
-        
         
         #connect the action to the run method
         QObject.connect(self.action, SIGNAL("triggered()"), self.show)
@@ -87,19 +82,8 @@ class PgRoutingLayer:
       	dados = str(self.dock.comboConnections.currentText())
       	self.db = self.actionsDb[dados].connect()
         
-        routingMethod = self.dock.comboBoxRoutingMethod.currentText()
-        (uri,layerName) = self.getUri(routingMethod)
-        
-        vl = self.iface.addVectorLayer(uri.uri(), layerName, self.db.getProviderName())
-		
-        QApplication.restoreOverrideCursor()
-    
-    def getUri(self,routingMethod):
-        query=""
-
-
         tableName = self.dock.lineEditTable.text()
-        uniqueFieldName = self.dock.lineEditEdgeId.text() #uniqueCombo.currentText()
+        uniqueFieldName = self.dock.lineEditEdgeId.text() 
         fromNodeName = self.dock.lineEditFromNode.text()
         toNodeName = self.dock.lineEditToNode.text()
         costName = self.dock.lineEditCost.text()
@@ -110,72 +94,74 @@ class PgRoutingLayer:
         toNode = self.dock.lineEditToNodeId.text()
         geomFieldName = self.dock.lineEditGeometry.text()
 
-
-        if routingMethod == "Shortest Path Dijkstra":
+        # map routing method name to function call
+        routingMethod = str(self.dock.comboBoxRoutingMethod.currentText())
+        method2query = {"Shortest Path Dijkstra":self.getShortestPathQuery(tableName,uniqueFieldName,fromNodeName,toNodeName,costName,hasReverseCost,isDirected,reverseCost,fromNode,toNode)}
+        query = method2query[routingMethod]
         
-            """The shortest_path function has the following declaration:
-            CREATE OR REPLACE FUNCTION shortest_path(
-                sql text,
-                source_id integer,
-                target_id integer,
-                directed boolean,
-                has_reverse_cost boolean)
-            RETURNS SETOF path_result
-            
-            Arguments:
-    
-            sql: a SQL query, which should return a set of rows with the following columns:
+        uri = self.db.getURI()
+        uri.setDataSource("", "(" + query + ")", geomFieldName, "", uniqueFieldName)
+
+        # add vector layer to map
+        layerName = "from "+fromNode+" to "+toNode
+        vl = self.iface.addVectorLayer(uri.uri(), layerName, self.db.getProviderName())
+        QApplication.restoreOverrideCursor()
+        
+    def getShortestPathQuery(self,tableName,uniqueFieldName,fromNodeName,toNodeName,costName,hasReverseCost,isDirected,reverseCost,fromNode,toNode):
+        """The shortest_path function has the following declaration:
+        CREATE OR REPLACE FUNCTION shortest_path(
+            sql text,
+            source_id integer,
+            target_id integer,
+            directed boolean,
+            has_reverse_cost boolean)
+        RETURNS SETOF path_result
+        
+        Arguments:
+
+        sql: a SQL query, which should return a set of rows with the following columns:
             SELECT id, source, target, cost FROM edge_table
             id: an int4 identifier of the edge
             source: an int4 identifier of the source vertex
             target: an int4 identifier of the target vertex
             cost: an float8 value, of the edge traversal cost. (a negative cost will prevent the edge from being inserted in the graph).
             reverse_cost (optional): the cost for the reverse traversal of the edge. This is only used when the directed and has_reverse_cost parameters are true (see the above remark about negative costs).
-            
-            source_id: int4 id of the start point
-            
-            directed: true if the graph is directed
-            
-            has_reverse_cost: if true, the reverse_cost column of the SQL generated set of rows will be used for the cost of the traversal of the edge in the opposite direction.
-            """
-    
-            query = "SELECT * FROM "
-            query += tableName
-            query += " JOIN (SELECT * FROM shortest_path('SELECT "
-            query += uniqueFieldName 
-            query += " AS id, "
-            query += fromNodeName
-            query += "::int4 AS source, "
-            query += toNodeName
-            query += "::int4 AS target, "
-            query += costName
-            query += "::float8 AS cost "
-            
-            if hasReverseCost and reverseCost:
-                query += ","
-                query += reverseCost
-                query += "::float8 AS reverse_cost "
-                
-            query += " FROM "
-            query += tableName
-            query += " ', "
-            query += fromNode
-            query += ","
-            query += toNode
-            query += ", "
-            query += str(isDirected)
-            query += ", "
-            query += str(hasReverseCost)
-            query += ")) AS route ON "
-            query += tableName
-            query += "."
-            query += uniqueFieldName
-            query += "= route.edge_id"
+        source_id: int4 id of the start point
+        directed: true if the graph is directed
+        has_reverse_cost: if true, the reverse_cost column of the SQL generated set of rows will be used for the cost of the traversal of the edge in the opposite direction.
+        """
 
-
-        layerName = "from "+fromNode+" to "+toNode
+        query = "SELECT * FROM "
+        query += tableName
+        query += " JOIN (SELECT * FROM shortest_path('SELECT "
+        query += uniqueFieldName 
+        query += " AS id, "
+        query += fromNodeName
+        query += "::int4 AS source, "
+        query += toNodeName
+        query += "::int4 AS target, "
+        query += costName
+        query += "::float8 AS cost "
         
-        uri = self.db.getURI()
-        uri.setDataSource("", "(" + query + ")", geomFieldName, "", uniqueFieldName)
- 
-        return (uri,layerName)
+        if hasReverseCost and isDirected and reverseCost:
+            query += ","
+            query += reverseCost # only used when the directed and has_reverse_cost parameters are true
+            query += "::float8 AS reverse_cost "
+            
+        query += " FROM "
+        query += tableName
+        query += " ', "
+        query += fromNode
+        query += ","
+        query += toNode
+        query += ", "
+        query += str(isDirected)
+        query += ", "
+        query += str(hasReverseCost)
+        query += ")) AS route ON "
+        query += tableName
+        query += "."
+        query += uniqueFieldName
+        query += "= route.edge_id"
+        
+        return query

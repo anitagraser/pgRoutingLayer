@@ -63,12 +63,36 @@
      </layout>
     </item>
     <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QCheckBox" name="checkBoxDirected">
+        <property name="toolTip">
+         <string>tick if the graph is directed</string>
+        </property>
+        <property name="text">
+         <string>directed graph</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBoxReverse">
+        <property name="toolTip">
+         <string>if ticked, reverse cost will be used for the cost of the traversal of the edge in the opposite direction</string>
+        </property>
+        <property name="text">
+         <string>has reverse costs</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
      <widget class="QGroupBox" name="groupBox">
       <property name="locale">
        <locale language="English" country="UnitedStates"/>
       </property>
       <property name="title">
-       <string>Attribute Names</string>
+       <string>Attribute names</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
@@ -79,7 +103,7 @@
             <locale language="English" country="UnitedStates"/>
            </property>
            <property name="text">
-            <string>Edge ID</string>
+            <string>Edge id</string>
            </property>
           </widget>
          </item>
@@ -186,30 +210,6 @@
          </item>
         </layout>
        </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="QCheckBox" name="checkBoxDirected">
-           <property name="toolTip">
-            <string>tick if the graph is directed</string>
-           </property>
-           <property name="text">
-            <string>directed graph</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="checkBoxReverse">
-           <property name="toolTip">
-            <string>if ticked, reverse cost will be used for the cost of the traversal of the edge in the opposite direction</string>
-           </property>
-           <property name="text">
-            <string>has reverse costs</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
       </layout>
      </widget>
     </item>
@@ -221,7 +221,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>From Node #</string>
+         <string>From node #</string>
         </property>
        </widget>
       </item>
@@ -241,7 +241,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>to Node #</string>
+         <string>to node #</string>
         </property>
        </widget>
       </item>
