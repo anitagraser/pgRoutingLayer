@@ -63,7 +63,7 @@ class PgRoutingLayer:
         for i in self.actionsDb:
         	self.dock.comboConnections.addItem(i)
             
-        self.dock.lineEditRoadId.setText('gid')
+        self.dock.lineEditEdgeId.setText('gid')
         self.dock.lineEditTable.setText('network')
         self.dock.lineEditGeometry.setText('the_geom')
         self.dock.lineEditCost.setText('shape_leng')
@@ -99,7 +99,7 @@ class PgRoutingLayer:
 
 
         tableName = self.dock.lineEditTable.text()
-        uniqueFieldName = self.dock.lineEditRoadId.text() #uniqueCombo.currentText()
+        uniqueFieldName = self.dock.lineEditEdgeId.text() #uniqueCombo.currentText()
         fromNodeName = self.dock.lineEditFromNode.text()
         toNodeName = self.dock.lineEditToNode.text()
         costName = self.dock.lineEditCost.text()

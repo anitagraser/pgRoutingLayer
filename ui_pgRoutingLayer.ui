@@ -52,6 +52,9 @@
       </item>
       <item row="2" column="1">
        <widget class="QLineEdit" name="lineEditTable">
+        <property name="toolTip">
+         <string>name of the table containing the routable network</string>
+        </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
@@ -76,12 +79,15 @@
             <locale language="English" country="UnitedStates"/>
            </property>
            <property name="text">
-            <string>Road ID</string>
+            <string>Edge ID</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="lineEditRoadId">
+          <widget class="QLineEdit" name="lineEditEdgeId">
+           <property name="toolTip">
+            <string>identifier of the edge</string>
+           </property>
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
            </property>
@@ -99,6 +105,9 @@
          </item>
          <item row="1" column="1">
           <widget class="QLineEdit" name="lineEditFromNode">
+           <property name="toolTip">
+            <string>name of the source node column</string>
+           </property>
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
            </property>
@@ -116,6 +125,9 @@
          </item>
          <item row="2" column="1">
           <widget class="QLineEdit" name="lineEditToNode">
+           <property name="toolTip">
+            <string>name of the target node column</string>
+           </property>
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
            </property>
@@ -127,12 +139,15 @@
             <locale language="English" country="UnitedStates"/>
            </property>
            <property name="text">
-            <string>Link costs</string>
+            <string>Edge costs</string>
            </property>
           </widget>
          </item>
          <item row="3" column="1">
           <widget class="QLineEdit" name="lineEditCost">
+           <property name="toolTip">
+            <string>edge traversal cost (a negative cost will prevent the edge from being inserted in the graph)</string>
+           </property>
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
            </property>
@@ -149,10 +164,18 @@
           </widget>
          </item>
          <item row="5" column="1">
-          <widget class="QLineEdit" name="lineEditGeometry"/>
+          <widget class="QLineEdit" name="lineEditGeometry">
+           <property name="toolTip">
+            <string>name of the geometry column in network table</string>
+           </property>
+          </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QLineEdit" name="lineEditReverseCost"/>
+          <widget class="QLineEdit" name="lineEditReverseCost">
+           <property name="toolTip">
+            <string>(optional) the cost for the reverse traversal of the edge. This is only used if &quot;directed graph&quot; and &quot;has reverse cost&quot; are ticked.</string>
+           </property>
+          </widget>
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_10">
@@ -167,6 +190,9 @@
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QCheckBox" name="checkBoxDirected">
+           <property name="toolTip">
+            <string>tick if the graph is directed</string>
+           </property>
            <property name="text">
             <string>directed graph</string>
            </property>
@@ -174,6 +200,9 @@
          </item>
          <item>
           <widget class="QCheckBox" name="checkBoxReverse">
+           <property name="toolTip">
+            <string>if ticked, reverse cost will be used for the cost of the traversal of the edge in the opposite direction</string>
+           </property>
            <property name="text">
             <string>has reverse costs</string>
            </property>
@@ -198,6 +227,9 @@
       </item>
       <item>
        <widget class="QLineEdit" name="lineEditFromNodeId">
+        <property name="toolTip">
+         <string>id of the start node</string>
+        </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
@@ -215,6 +247,9 @@
       </item>
       <item>
        <widget class="QLineEdit" name="lineEditToNodeId">
+        <property name="toolTip">
+         <string>id of the end node</string>
+        </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
