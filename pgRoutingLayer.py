@@ -58,15 +58,16 @@ class PgRoutingLayer:
         for i in self.actionsDb:
         	self.dock.comboConnections.addItem(i)
             
-        self.dock.lineEditEdgeId.setText('gid')
-        self.dock.lineEditTable.setText('network')
-        self.dock.lineEditGeometry.setText('the_geom')
-        self.dock.lineEditCost.setText('shape_leng')
-        self.dock.lineEditFromNode.setText('start_id')
-        self.dock.lineEditToNode.setText('end_id')
+        self.dock.lineEditEdgeId.setText('id')
+        self.dock.lineEditTable.setText('at_2po_4pgr')
+        self.dock.lineEditGeometry.setText('geom_way')
+        self.dock.lineEditCost.setText('cost')
+        self.dock.lineEditReverseCost.setText('reverse_cost')
+        self.dock.lineEditFromNode.setText('source')
+        self.dock.lineEditToNode.setText('target')
         
-        self.dock.lineEditFromNodeId.setText('100')
-        self.dock.lineEditToNodeId.setText('500')     
+        self.dock.lineEditFromNodeId.setText('191266')
+        self.dock.lineEditToNodeId.setText('190866')     
         
     def show(self):
         self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
@@ -131,7 +132,7 @@ class PgRoutingLayer:
         has_reverse_cost: if true, the reverse_cost column of the SQL generated set of rows will be used for the cost of the traversal of the edge in the opposite direction.
         """
 
-        query = "SELECT * FROM "
+        query = "SELECT "+tableName+".*, route.cost AS route_cost FROM "
         query += tableName
         query += " JOIN (SELECT * FROM shortest_path('SELECT "
         query += uniqueFieldName 

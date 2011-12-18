@@ -292,6 +292,22 @@
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>comboConnections</tabstop>
+  <tabstop>lineEditTable</tabstop>
+  <tabstop>checkBoxDirected</tabstop>
+  <tabstop>checkBoxReverse</tabstop>
+  <tabstop>lineEditEdgeId</tabstop>
+  <tabstop>lineEditFromNode</tabstop>
+  <tabstop>lineEditToNode</tabstop>
+  <tabstop>lineEditCost</tabstop>
+  <tabstop>lineEditReverseCost</tabstop>
+  <tabstop>lineEditGeometry</tabstop>
+  <tabstop>lineEditFromNodeId</tabstop>
+  <tabstop>lineEditToNodeId</tabstop>
+  <tabstop>comboBoxRoutingMethod</tabstop>
+  <tabstop>buttonRun</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
