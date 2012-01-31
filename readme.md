@@ -11,7 +11,7 @@ A plugin for QGIS by Anita Graser (anitagraser@gmx.at)
 
 PgRouting Layer is a plugin for QGIS that serves as a GUI for pgRouting - a popular routing solution for PostGIS databases.
 
-## What Time Manager currently does
+## What this plugin currently does
 
 Currently, it supports pgRouting's Dijkstra shortest_path() function only.
 
