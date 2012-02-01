@@ -22,6 +22,14 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
 
-## Dependencies
+## Installation
+
+To install this plugin, download the zipped repository from https://github.com/anitagraser/pgRoutingLayer/zipball/master
+
+Unpack the zip file into your ~/.qgis/python/plugins folder.
+
+After a restart of QGIS, you should see the plugin available and activated in Plugin Manager.
+
+### Dependencies
 
 You'll need pgRouting up and running to use this plugin.
