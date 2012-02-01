@@ -1,6 +1,6 @@
 # Welcome to PgRouting Layer!
 
-A plugin for QGIS by Anita Graser (anitagraser@gmx.at) 
+A plugin for QGIS by Anita Graser 
 
 * project home and bug tracker: https://github.com/anitagraser/pgRoutingLayer
 * plugin repository: none yet
