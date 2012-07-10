@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PostgisQuery</class>
- <widget class="QDockWidget" name="PostgisQuery">
+ <class>pgRoutingLayerWidget</class>
+ <widget class="QDockWidget" name="pgRoutingLayerWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>250</width>
-    <height>363</height>
+    <width>242</width>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,9 +16,15 @@
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <item row="1" column="0">
-       <widget class="QLabel" name="label">
+     <layout class="QGridLayout" name="gridLayoutBase">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelConnections">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
@@ -27,90 +33,111 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="0" column="2">
        <widget class="QComboBox" name="comboConnections">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelFunction">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="text">
-         <string>Network table</string>
+         <string>Function</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="lineEditTable">
-        <property name="toolTip">
-         <string>name of the table containing the routable network</string>
+      <item row="1" column="2">
+       <widget class="QComboBox" name="comboBoxFunction">
+        <property name="enabled">
+         <bool>true</bool>
         </property>
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
+        <property name="currentIndex">
+         <number>-1</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>shortest_path</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>shortest_path_astar</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>shortest_path_shooting_star</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>driving_distance</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>alphashape</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>tsp</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QCheckBox" name="checkBoxDirected">
-        <property name="toolTip">
-         <string>tick if the graph is directed</string>
-        </property>
-        <property name="text">
-         <string>directed graph</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="checkBoxReverse">
-        <property name="toolTip">
-         <string>if ticked, reverse cost will be used for the cost of the traversal of the edge in the opposite direction</string>
-        </property>
-        <property name="text">
-         <string>has reverse costs</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="groupBox">
+     <widget class="QGroupBox" name="groupBoxSql">
       <property name="locale">
        <locale language="English" country="UnitedStates"/>
       </property>
       <property name="title">
-       <string>Attribute names</string>
+       <string>sql</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <layout class="QGridLayout" name="gridLayout">
          <item row="0" column="0">
-          <widget class="QLabel" name="label_3">
+          <widget class="QLabel" name="labelTable">
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
            </property>
            <property name="text">
-            <string>Edge id</string>
+            <string>edge_table</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="lineEditEdgeId">
+          <widget class="QLineEdit" name="lineEditTable">
            <property name="toolTip">
-            <string>identifier of the edge</string>
+            <string>name of the table containing the routable network</string>
            </property>
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
@@ -118,135 +145,228 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QLabel" name="label_4">
+          <widget class="QLabel" name="labelGeometry">
            <property name="locale">
             <locale language="English" country="UnitedStates"/>
            </property>
            <property name="text">
-            <string>From node</string>
+            <string>geometry</string>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QLineEdit" name="lineEditFromNode">
-           <property name="toolTip">
-            <string>name of the source node column</string>
-           </property>
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_5">
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-           <property name="text">
-            <string>To node</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="lineEditToNode">
-           <property name="toolTip">
-            <string>name of the target node column</string>
-           </property>
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_6">
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-           <property name="text">
-            <string>Edge costs</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLineEdit" name="lineEditCost">
-           <property name="toolTip">
-            <string>edge traversal cost (a negative cost will prevent the edge from being inserted in the graph)</string>
-           </property>
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="label_7">
-           <property name="locale">
-            <locale language="English" country="UnitedStates"/>
-           </property>
-           <property name="text">
-            <string>Geometry</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
           <widget class="QLineEdit" name="lineEditGeometry">
            <property name="toolTip">
             <string>name of the geometry column in network table</string>
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
-          <widget class="QLineEdit" name="lineEditReverseCost">
-           <property name="toolTip">
-            <string>(optional) the cost for the reverse traversal of the edge. This is only used if &quot;directed graph&quot; and &quot;has reverse cost&quot; are ticked.</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="label_10">
-           <property name="text">
-            <string>Reverse costs</string>
-           </property>
-          </widget>
-         </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QScrollArea" name="scrollAreaColumns">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_2">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>185</width>
+            <height>300</height>
+           </rect>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="0">
+            <layout class="QGridLayout" name="gridLayoutColumns">
+             <item row="0" column="0">
+              <widget class="QLabel" name="labelId">
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+               <property name="text">
+                <string>id</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="lineEditId">
+               <property name="toolTip">
+                <string>identifier of the edge</string>
+               </property>
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="labelSource">
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+               <property name="text">
+                <string>source</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="lineEditSource">
+               <property name="toolTip">
+                <string>name of the source node column</string>
+               </property>
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="labelTarget">
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+               <property name="text">
+                <string>target</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="lineEditTarget">
+               <property name="toolTip">
+                <string>name of the target node column</string>
+               </property>
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="labelCost">
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+               <property name="text">
+                <string>cost</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLineEdit" name="lineEditCost">
+               <property name="toolTip">
+                <string>edge traversal cost (a negative cost will prevent the edge from being inserted in the graph)</string>
+               </property>
+               <property name="locale">
+                <locale language="English" country="UnitedStates"/>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QLineEdit" name="lineEditReverseCost">
+               <property name="toolTip">
+                <string>(optional) the cost for the reverse traversal of the edge. This is only used if &quot;directed graph&quot; and &quot;has reverse cost&quot; are ticked.</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="labelReverseCost">
+               <property name="text">
+                <string>reverse_cost</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="labelX1">
+               <property name="text">
+                <string>x1</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QLineEdit" name="lineEditX1"/>
+             </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="labelY1">
+               <property name="text">
+                <string>y1</string>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="labelX2">
+               <property name="text">
+                <string>x2</string>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="labelY2">
+               <property name="text">
+                <string>y2</string>
+               </property>
+              </widget>
+             </item>
+             <item row="9" column="0">
+              <widget class="QLabel" name="labelRule">
+               <property name="text">
+                <string>rule</string>
+               </property>
+              </widget>
+             </item>
+             <item row="10" column="0">
+              <widget class="QLabel" name="labelToCost">
+               <property name="text">
+                <string>to_cost</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QLineEdit" name="lineEditY1"/>
+             </item>
+             <item row="7" column="1">
+              <widget class="QLineEdit" name="lineEditX2"/>
+             </item>
+             <item row="8" column="1">
+              <widget class="QLineEdit" name="lineEditY2"/>
+             </item>
+             <item row="9" column="1">
+              <widget class="QLineEdit" name="lineEditRule"/>
+             </item>
+             <item row="10" column="1">
+              <widget class="QLineEdit" name="lineEditToCost"/>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </widget>
        </item>
       </layout>
      </widget>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QLabel" name="label_8">
+     <layout class="QGridLayout" name="gridLayoutIds">
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelSourceId">
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>From node #</string>
+         <string>source_id</string>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QLineEdit" name="lineEditFromNodeId">
-        <property name="toolTip">
-         <string>id of the start node</string>
-        </property>
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_9">
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelTargetId">
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>to node #</string>
+         <string>target_id</string>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QLineEdit" name="lineEditToNodeId">
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="lineEditTargetId">
         <property name="toolTip">
          <string>id of the end node</string>
         </property>
@@ -255,24 +375,134 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="lineEditSourceId">
+        <property name="toolTip">
+         <string>id of the start node</string>
+        </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QToolButton" name="buttonSourceId">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>add.png</normaloff>add.png</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QToolButton" name="buttonTargetId">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>add.png</normaloff>add.png</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelIds">
+        <property name="text">
+         <string>ids</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="lineEditIds"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QToolButton" name="buttonIds">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>add.png</normaloff>add.png</iconset>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <layout class="QHBoxLayout" name="horizontalLayoutOption">
       <item>
-       <widget class="QComboBox" name="comboBoxRoutingMethod">
-        <item>
-         <property name="text">
-          <string>Shortest Path Dijkstra</string>
-         </property>
-        </item>
+       <widget class="QLabel" name="labelDistance">
+        <property name="text">
+         <string>distance</string>
+        </property>
        </widget>
       </item>
       <item>
+       <widget class="QLineEdit" name="lineEditDistance"/>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayoutOption1">
+      <item>
+       <widget class="QCheckBox" name="checkBoxDirected">
+        <property name="toolTip">
+         <string>tick if the graph is directed</string>
+        </property>
+        <property name="text">
+         <string>directed</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBoxHasReverseCost">
+        <property name="toolTip">
+         <string>if ticked, reverse cost will be used for the cost of the traversal of the edge in the opposite direction</string>
+        </property>
+        <property name="text">
+         <string>has_reverse_cost</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayoutCommands">
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <item>
        <widget class="QPushButton" name="buttonRun">
-        <property name="maximumSize">
+        <property name="minimumSize">
          <size>
           <width>70</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
           <height>16777215</height>
          </size>
         </property>
@@ -280,10 +510,54 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Route!</string>
+         <string>Run</string>
         </property>
         <property name="flat">
          <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="buttonExport">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>70</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Export</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="buttonClear">
+        <property name="minimumSize">
+         <size>
+          <width>70</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Clear</string>
         </property>
        </widget>
       </item>
@@ -294,19 +568,33 @@
  </widget>
  <tabstops>
   <tabstop>comboConnections</tabstop>
+  <tabstop>comboBoxFunction</tabstop>
   <tabstop>lineEditTable</tabstop>
-  <tabstop>checkBoxDirected</tabstop>
-  <tabstop>checkBoxReverse</tabstop>
-  <tabstop>lineEditEdgeId</tabstop>
-  <tabstop>lineEditFromNode</tabstop>
-  <tabstop>lineEditToNode</tabstop>
+  <tabstop>lineEditGeometry</tabstop>
+  <tabstop>scrollAreaColumns</tabstop>
+  <tabstop>lineEditId</tabstop>
+  <tabstop>lineEditSource</tabstop>
+  <tabstop>lineEditTarget</tabstop>
   <tabstop>lineEditCost</tabstop>
   <tabstop>lineEditReverseCost</tabstop>
-  <tabstop>lineEditGeometry</tabstop>
-  <tabstop>lineEditFromNodeId</tabstop>
-  <tabstop>lineEditToNodeId</tabstop>
-  <tabstop>comboBoxRoutingMethod</tabstop>
+  <tabstop>lineEditX1</tabstop>
+  <tabstop>lineEditY1</tabstop>
+  <tabstop>lineEditX2</tabstop>
+  <tabstop>lineEditY2</tabstop>
+  <tabstop>lineEditRule</tabstop>
+  <tabstop>lineEditToCost</tabstop>
+  <tabstop>lineEditIds</tabstop>
+  <tabstop>buttonIds</tabstop>
+  <tabstop>lineEditSourceId</tabstop>
+  <tabstop>buttonSourceId</tabstop>
+  <tabstop>lineEditTargetId</tabstop>
+  <tabstop>buttonTargetId</tabstop>
+  <tabstop>lineEditDistance</tabstop>
+  <tabstop>checkBoxDirected</tabstop>
+  <tabstop>checkBoxHasReverseCost</tabstop>
   <tabstop>buttonRun</tabstop>
+  <tabstop>buttonExport</tabstop>
+  <tabstop>buttonClear</tabstop>
  </tabstops>
  <resources/>
  <connections/>
