@@ -386,7 +386,7 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QToolButton" name="buttonSourceId">
+       <widget class="QToolButton" name="buttonSelectSourceId">
         <property name="text">
          <string/>
         </property>
@@ -400,7 +400,7 @@
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QToolButton" name="buttonTargetId">
+       <widget class="QToolButton" name="buttonSelectTargetId">
         <property name="text">
          <string/>
         </property>
@@ -424,13 +424,16 @@
        <widget class="QLineEdit" name="lineEditIds"/>
       </item>
       <item row="0" column="2">
-       <widget class="QToolButton" name="buttonIds">
+       <widget class="QToolButton" name="buttonSelectIds">
         <property name="text">
          <string/>
         </property>
         <property name="icon">
          <iconset>
           <normaloff>add.png</normaloff>add.png</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -584,11 +587,11 @@
   <tabstop>lineEditRule</tabstop>
   <tabstop>lineEditToCost</tabstop>
   <tabstop>lineEditIds</tabstop>
-  <tabstop>buttonIds</tabstop>
+  <tabstop>buttonSelectIds</tabstop>
   <tabstop>lineEditSourceId</tabstop>
-  <tabstop>buttonSourceId</tabstop>
+  <tabstop>buttonSelectSourceId</tabstop>
   <tabstop>lineEditTargetId</tabstop>
-  <tabstop>buttonTargetId</tabstop>
+  <tabstop>buttonSelectTargetId</tabstop>
   <tabstop>lineEditDistance</tabstop>
   <tabstop>checkBoxDirected</tabstop>
   <tabstop>checkBoxHasReverseCost</tabstop>
