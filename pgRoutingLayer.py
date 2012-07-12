@@ -27,8 +27,9 @@ from qgis.core import *
 from qgis.gui import *
 import dbConnection
 #import highlighter as hl
-import psycopg2
 import os
+import psycopg2
+import re
 
 conn = dbConnection.ConnectionManager()
 
@@ -41,7 +42,7 @@ class PgRoutingLayer:
     targetIdVertexMarker = None
     sourceIdRubberBand = None
     targetIdRubberBand = None
-    resultNodesRubberBands = None
+    resultNodesVertexMarkers = None
     resultPathRubberBand = None
     resultAreaRubberBand = None
     toggleControls = [
@@ -53,7 +54,8 @@ class PgRoutingLayer:
         'lineEditTargetId', 'buttonSelectTargetId',
         'lineEditIds', 'buttonSelectIds',
         'lineEditDistance',
-        'checkBoxDirected', 'checkBoxHasReverseCost'
+        'checkBoxDirected', 'checkBoxHasReverseCost',
+        'buttonExport'
     ]
     functionControlsList = {
         'shortest_path' : [
@@ -61,7 +63,8 @@ class PgRoutingLayer:
             'lineEditCost', 'lineEditReverseCost',
             'lineEditSourceId', 'buttonSelectSourceId',
             'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost'
+            'checkBoxDirected', 'checkBoxHasReverseCost',
+            'buttonExport'
         ],
         'shortest_path_astar' : [
             'lineEditId', 'lineEditSource', 'lineEditTarget',
@@ -69,7 +72,8 @@ class PgRoutingLayer:
             'lineEditX1', 'lineEditY1', 'lineEditX2', 'lineEditY2',
             'lineEditSourceId', 'buttonSelectSourceId',
             'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost'
+            'checkBoxDirected', 'checkBoxHasReverseCost',
+            'buttonExport'
         ],
         'shortest_path_shooting_star' : [
             'lineEditId', 'lineEditSource', 'lineEditTarget',
@@ -78,7 +82,8 @@ class PgRoutingLayer:
             'lineEditRule', 'lineEditToCost',
             'lineEditSourceId', 'buttonSelectSourceId',
             'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost'
+            'checkBoxDirected', 'checkBoxHasReverseCost',
+            'buttonExport'
         ],
         'driving_distance' : [
             'lineEditId', 'lineEditSource', 'lineEditTarget',
@@ -90,7 +95,6 @@ class PgRoutingLayer:
         'alphashape' : [
             'lineEditId', 'lineEditSource', 'lineEditTarget',
             'lineEditCost', 'lineEditReverseCost',
-            'lineEditX1', 'lineEditY1',
             'lineEditSourceId', 'buttonSelectSourceId',
             'lineEditDistance',
             'checkBoxDirected', 'checkBoxHasReverseCost'
@@ -103,6 +107,21 @@ class PgRoutingLayer:
             'lineEditSourceId', 'buttonSelectSourceId'
         ]
     }
+    nodeTableCreateQueryFormat = """
+        CREATE TEMPORARY TABLE node AS
+            SELECT id,
+                ST_X(%(geometry)s) AS x,
+                ST_Y(%(geometry)s) AS y,
+                %(geometry)s
+                FROM (
+                    SELECT %(source)s AS id,
+                        %(startpoint)s AS %(geometry)s
+                        FROM %(edge_table)s
+                    UNION
+                    SELECT %(target)s AS id,
+                        %(endpoint)s AS %(geometry)s
+                        FROM %(edge_table)s
+                ) AS node;"""
     functionQueryFormatList = {
         'shortest_path' : """
             SELECT * FROM shortest_path('
@@ -111,7 +130,7 @@ class PgRoutingLayer:
                     %(target)s::int4 AS target,
                     %(cost)s::float8 AS cost%(reverse_cost)s
                     FROM %(edge_table)s',
-                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s);""",
+                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""",
         'shortest_path_astar' : """
             SELECT * FROM shortest_path_astar('
                 SELECT %(id)s AS id,
@@ -123,7 +142,7 @@ class PgRoutingLayer:
                     %(x2)s::float8 AS x2,
                     %(y2)s::float8 AS y2
                     FROM %(edge_table)s',
-                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s);""",
+                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""",
         'shortest_path_shooting_star' : """
             SELECT * FROM shortest_path_shooting_star('
                 SELECT %(id)s AS id,
@@ -137,7 +156,7 @@ class PgRoutingLayer:
                     %(rule)s::text AS rule,
                     %(to_cost)s::float8
                     FROM %(edge_table)s',
-                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s);""",
+                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""",
         'driving_distance' : """
             SELECT * FROM driving_distance('
                 SELECT %(id)s AS id,
@@ -145,25 +164,20 @@ class PgRoutingLayer:
                     %(target)s::int4 AS target,
                     %(cost)s::float8 AS cost%(reverse_cost)s
                     FROM %(edge_table)s',
-                %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s);""",
+                %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s)""",
         'alphashape' : """
             SELECT * FROM alphashape('
-                SELECT %(id)s AS id,
-                    %(x1)s::float8 AS x,
-                    %(y1)s::float8 AS y
-                    FROM %(edge_table)s
+                SELECT *
+                    FROM node
                     JOIN
-                    (SELECT id, x1 AS x, y1 AS y
-                        FROM %(edge_table)s
-                        JOIN
-                        (SELECT * FROM driving_distance(''
-                            SELECT %(id)s AS id,
-                                %(source)s::int4 AS source,
-                                %(target)s::int4 AS target,
-                                %(cost)s::float8 AS cost%(reverse_cost)s
-                                FROM %(edge_table)s'',
-                            %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s))
-                        AS dd ON %(edge_table)s.%(id)s = dd.vertex_id'::text)""",
+                    (SELECT * FROM driving_distance(''
+                        SELECT %(id)s AS id,
+                            %(source)s::int4 AS source,
+                            %(target)s::int4 AS target,
+                            %(cost)s::float8 AS cost%(reverse_cost)s
+                            FROM %(edge_table)s'',
+                        %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s))
+                    AS dd ON node.id = dd.vertex_id'::text)""",
         'tsp' : """
             SELECT * FROM tsp('
                 SELECT DISTINCT %(source)s AS source_id,
@@ -171,7 +185,7 @@ class PgRoutingLayer:
                     %(y1)s::float8 AS y
                     FROM %(edge_table)s
                     WHERE %(source)s IN (%(ids)s)',
-                '%(ids)s', %(source_id)s);"""
+                '%(ids)s', %(source_id)s)"""
     }
     
     def __init__(self, iface):
@@ -256,12 +270,12 @@ class PgRoutingLayer:
         self.targetIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
         self.targetIdRubberBand.setColor(Qt.yellow)
         self.targetIdRubberBand.setWidth(4)
-        self.resultNodesRubberBands = None
+        self.resultNodesVertexMarkers = []
         self.resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
         self.resultPathRubberBand.setColor(Qt.red)
         self.resultPathRubberBand.setWidth(2)
         self.resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
-        self.resultPathRubberBand.setColor(Qt.magenta)
+        self.resultAreaRubberBand.setColor(Qt.magenta)
         self.resultAreaRubberBand.setWidth(2)
 
     def show(self):
@@ -304,6 +318,7 @@ class PgRoutingLayer:
         if checked:
             self.dock.lineEditSourceId.setText("")
             self.sourceIdVertexMarker.setVisible(False)
+            self.sourceIdRubberBand.reset(False)
             self.iface.mapCanvas().setMapTool(self.sourceIdEmitPoint)
         else:
             self.iface.mapCanvas().unsetMapTool(self.sourceIdEmitPoint)
@@ -332,11 +347,13 @@ class PgRoutingLayer:
                     for pt in geom.asPolyline():
                         self.sourceIdRubberBand.addPoint(pt)
                 self.dock.buttonSelectSourceId.click()
+        self.iface.mapCanvas().clear()
         
     def selectTargetId(self, checked):
         if checked:
             self.dock.lineEditTargetId.setText("")
             self.targetIdVertexMarker.setVisible(False)
+            self.targetIdRubberBand.reset(False)
             self.iface.mapCanvas().setMapTool(self.targetIdEmitPoint)
         else:
             self.iface.mapCanvas().unsetMapTool(self.targetIdEmitPoint)
@@ -365,6 +382,7 @@ class PgRoutingLayer:
                     for pt in geom.asPolyline():
                         self.targetIdRubberBand.addPoint(pt)
                 self.dock.buttonSelectTargetId.click()
+        self.iface.mapCanvas().clear()
     
     def updateReverseCostEnabled(self, state):
         if state == Qt.Checked:
@@ -375,14 +393,15 @@ class PgRoutingLayer:
     def run(self):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         
-        self.resultPathRubberBand.reset(False)
-        self.resultAreaRubberBand.reset(True)
-        
-        dados = str(self.dock.comboConnections.currentText())
-        db = self.actionsDb[dados].connect()
-        
         func = str(self.dock.comboBoxFunction.currentText())
         args = self.getArguments(self.functionControlsList[func])
+        
+        if func != 'alphashape':
+            for marker in self.resultNodesVertexMarkers:
+                marker.setVisible(False)
+            self.resultNodesVertexMarkers = []
+        self.resultPathRubberBand.reset(False)
+        self.resultAreaRubberBand.reset(True)
         
         empties = []
         for key in args.keys():
@@ -391,15 +410,32 @@ class PgRoutingLayer:
         
         if len(empties) > 0:
             QApplication.restoreOverrideCursor()
-            QMessageBox.warning(self.dock, str(self.dock.windowTitle),
+            QMessageBox.warning(self.dock, self.dock.windowTitle(),
                 'Following argument is not specified.\n' + ','.join(empties))
             return
         
         query = self.functionQueryFormatList[func] % args
-        ##QMessageBox.information(self.dock, str(self.dock.windowTitle), query)
+        ##QMessageBox.information(self.dock, self.dock.windowTitle(), query)
         
         try:
+            dados = str(self.dock.comboConnections.currentText())
+            db = self.actionsDb[dados].connect()
+            
             con = db.con
+            
+            if (func == 'driving_distance') or (func == 'alphashape'):
+                srid, geomType = self.getSridAndGeomType(con, args)
+                if geomType == 'ST_MultiLineString':
+                    args['startpoint'] = "ST_StartPoint(ST_GeometryN(%(geometry)s, 1))" % args
+                    args['endpoint'] = "ST_EndPoint(ST_GeometryN(%(geometry)s, 1))" % args
+                elif geomType == 'ST_LineString':
+                    args['startpoint'] = "ST_StartPoint(%(geometry)s)" % args
+                    args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
+            
+                if func == 'alphashape':
+                    cur = con.cursor()
+                    cur.execute(self.nodeTableCreateQueryFormat % args)
+                    
             cur = con.cursor()
             cur.execute(query)
             rows = cur.fetchall()
@@ -419,13 +455,14 @@ class PgRoutingLayer:
                                 SELECT ST_AsText(ST_Reverse(%(geometry)s)) FROM %(edge_table)s
                                     WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d;
                             """ % args
-                            ##QMessageBox.information(self.dock, str(self.dock.windowTitle), query2)
+                            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query2)
                             cur2.execute(query2)
                             row2 = cur2.fetchone()
-                            ##QMessageBox.information(self.dock, str(self.dock.windowTitle), str(row2[0]))
-                            if row2 == None:
+                            ##QMessageBox.information(self.dock, self.dock.windowTitle(), str(row2[0]))
+                            if not row2:
+                                # TODO: shooting_star always returns invalid vertex_id!
                                 QApplication.restoreOverrideCursor()
-                                QMessageBox.critical(self.dock, str(self.dock.windowTitle),
+                                QMessageBox.critical(self.dock, self.dock.windowTitle(),
                                     "Invalid result geometry. (vertex_id:%(result_vertex_id)d, edge_id:%(result_edge_id)d)" % args)
                                 return
                             geom = QgsGeometry().fromWkt(str(row2[0]))
@@ -437,44 +474,112 @@ class PgRoutingLayer:
                                 for pt in geom.asPolyline():
                                     self.resultPathRubberBand.addPoint(pt)
                     elif func == 'driving_distance':
-                        #TODO:
-                        return
+                        query2 = """
+                            SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
+                                WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
+                            UNION
+                            SELECT ST_AsText(%(endpoint)s) FROM %(edge_table)s
+                                WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
+                        """ % args
+                        cur2.execute(query2)
+                        row2 = cur2.fetchone()
+                        if not row2:
+                            QApplication.restoreOverrideCursor()
+                            QMessageBox.critical(self.dock, self.dock.windowTitle(),
+                                "Invalid result geometry. (vertex_id:%(result_vertex_id)d, edge_id:%(result_edge_id)d)" % args)
+                            return
+                        geom = QgsGeometry().fromWkt(str(row2[0]))
+                        pt = geom.asPoint()
+                        vertexMarker = QgsVertexMarker(self.iface.mapCanvas())
+                        vertexMarker.setColor(Qt.red)
+                        vertexMarker.setPenWidth(2)
+                        vertexMarker.setIconSize(5)
+                        vertexMarker.setCenter(QgsPoint(pt))
+                        self.resultNodesVertexMarkers.append(vertexMarker)
                     elif func == 'tsp':
-                        #TODO:
+                        # TODO:
                         return
             elif func == 'alphashape':
-                #TODO:
-                return
+                # return columns are 'x', 'y'
+                for row in rows:
+                    x = row[0]
+                    y = row[1]
+                    self.resultAreaRubberBand.addPoint(QgsPoint(x, y))
             
         except psycopg2.DatabaseError, e:
             QApplication.restoreOverrideCursor()
-            QMessageBox.critical(self.dock, str(self.dock.windowTitle), '%s' % e)
-            return
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
             
         finally:
+            QApplication.restoreOverrideCursor()
             if db and db.con:
                 db.con.close()
         
-        #TODO:
-        #uri = self.db.getURI()
-        #uri.setDataSource("", "(" + query + ")", geomFieldName, "", uniqueFieldName)
-        
-        # add vector layer to map
-        #layerName = "from "+fromNode+" to "+toNode
-        #vl = self.iface.addVectorLayer(uri.uri(), layerName, self.db.getProviderName())
-        QApplication.restoreOverrideCursor()
-        
     def export(self):
-        #TODO:
-        return
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        
+        func = str(self.dock.comboBoxFunction.currentText())
+        args = self.getArguments(self.functionControlsList[func])
+        
+        empties = []
+        for key in args.keys():
+            if not args[key]:
+                empties.append(key)
+        
+        if len(empties) > 0:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.warning(self.dock, self.dock.windowTitle(),
+                'Following argument is not specified.\n' + ','.join(empties))
+            return
+        
+        args['path_query'] = self.functionQueryFormatList[func] % args
+        
+        query = """
+            SELECT %(edge_table)s.*,
+                route.cost AS route_cost
+                FROM %(edge_table)s
+                JOIN
+                (%(path_query)s) AS route
+                ON %(edge_table)s.%(id)s = route.edge_id""" % args
+        
+        query = query.replace('\n', ' ')
+        query = re.sub(r'\s+', ' ', query)
+        query = query.strip()
+        ##QMessageBox.information(self.dock, self.dock.windowTitle(), query)
+        
+        try:
+            dados = str(self.dock.comboConnections.currentText())
+            db = self.actionsDb[dados].connect()
+
+            uri = db.getURI()
+            uri.setDataSource("", "(" + query + ")", args['geometry'], "", args['id'])
+            
+            # add vector layer to map
+            layerName = "from "+args['source_id']+" to "+args['target_id']
+            vl = self.iface.addVectorLayer(uri.uri(), layerName, db.getProviderName())
+            
+        except psycopg2.DatabaseError, e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
+            
+        finally:
+            QApplication.restoreOverrideCursor()
+            if db and db.con:
+                db.con.close()
         
     def clear(self):
         self.dock.lineEditIds.setText("")
-        self.idsVertexMarker = None
+        for marker in self.idsVertexMarkers:
+            marker.setVisible(False)
+        self.idsVertexMarkers = []
         self.dock.lineEditSourceId.setText("")
-        self.sourceIdVertexMarker = None
+        self.sourceIdVertexMarker.setVisible(False)
         self.dock.lineEditTargetId.setText("")
-        self.targetIdVertexMarker = None
+        self.targetIdVertexMarker.setVisible(False)
+        self.sourceIdRubberBand.reset(False)
+        self.targetIdRubberBand.reset(False)
+        for marker in self.resultNodesVertexMarkers:
+            marker.setVisible(False)
         self.resultPathRubberBand.reset(False)
         self.resultAreaRubberBand.reset(True)
         
@@ -553,11 +658,22 @@ class PgRoutingLayer:
         
         if len(empties) > 0:
             QApplication.restoreOverrideCursor()
-            QMessageBox.warning(self.dock, str(self.dock.windowTitle),
+            QMessageBox.warning(self.dock, self.dock.windowTitle(),
                 'Following argument is not specified.\n' + ','.join(empties))
             return None
         
         return args
+        
+    def getSridAndGeomType(self, con, args):
+        cur = con.cursor()
+        cur.execute("""
+            SELECT ST_SRID(%(geometry)s), ST_GeometryType(%(geometry)s)
+                FROM %(edge_table)s
+                WHERE %(id)s = (SELECT MIN(%(id)s) FROM %(edge_table)s)""" % args)
+        row = cur.fetchone()
+        srid = row[0]
+        geomType = row[1]
+        return srid, geomType
         
     # emulate "matching.sql" - "find_nearest_node_within_distance"
     def findNearestNode(self, args, pt):
@@ -568,14 +684,8 @@ class PgRoutingLayer:
             db = self.actionsDb[dados].connect()
 
             con = db.con
-            cur = con.cursor()
-            cur.execute("""
-                SELECT ST_SRID(%(geometry)s), ST_GeometryType(%(geometry)s)
-                    FROM %(edge_table)s
-                    WHERE %(id)s = (SELECT MIN(%(id)s) FROM %(edge_table)s)""" % args)
-            row = cur.fetchone()
-            geomType = row[1]
-            args['srid'] = row[0]
+            srid, geomType = self.getSridAndGeomType(con, args)
+            args['srid'] = srid
             args['x'] = pt.x()
             args['y'] = pt.y()
             args['minx'] = pt.x() - distance
@@ -602,7 +712,7 @@ class PgRoutingLayer:
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
                     
-            #QMessageBox.information(self.dock, str(self.dock.windowTitle), query1)
+            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query1)
             cur1 = con.cursor()
             cur1.execute(query1)
             row1 = cur1.fetchone()
@@ -626,7 +736,7 @@ class PgRoutingLayer:
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
                     
-            #QMessageBox.information(self.dock, str(self.dock.windowTitle), query2)
+            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query2)
             cur2 = con.cursor()
             cur2.execute(query2)
             row2 = cur2.fetchone()
@@ -660,7 +770,7 @@ class PgRoutingLayer:
                     d = d2
                     wkt = wkt2
             
-            #QMessageBox.information(self.dock, str(self.dock.windowTitle), str(d))
+            ##QMessageBox.information(self.dock, self.dock.windowTitle(), str(d))
             if (d == None) or (d > distance):
                 node = None
                 wkt = None
@@ -670,14 +780,14 @@ class PgRoutingLayer:
             
         except psycopg2.DatabaseError, e:
             QApplication.restoreOverrideCursor()
-            QMessageBox.critical(self.dock, str(self.dock.windowTitle), '%s' % e)
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
             return False, None, None
             
         finally:
             if db and db.con:
                 db.con.close()
 
-    # emulate "matching.sql" - "find_nearest_node_within_distance"
+    # emulate "matching.sql" - "find_nearest_link_within_distance"
     def findNearestLink(self, args, pt):
         # distance = 10pix
         distance = self.iface.mapCanvas().getCoordinateTransform().mapUnitsPerPixel() * 10
@@ -712,7 +822,7 @@ class PgRoutingLayer:
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
                     
-            #QMessageBox.information(self.dock, str(self.dock.windowTitle), query1)
+            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query1)
             cur = con.cursor()
             cur.execute(query)
             row = cur.fetchone()
@@ -725,7 +835,7 @@ class PgRoutingLayer:
             
         except psycopg2.DatabaseError, e:
             QApplication.restoreOverrideCursor()
-            QMessageBox.critical(self.dock, str(self.dock.windowTitle), '%s' % e)
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
             return False, None, None
             
         finally:
