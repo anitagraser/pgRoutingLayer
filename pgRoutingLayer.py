@@ -43,6 +43,7 @@ class PgRoutingLayer:
     sourceIdRubberBand = None
     targetIdRubberBand = None
     resultNodesVertexMarkers = None
+    resultNodesTextAnnotations = None
     resultPathRubberBand = None
     resultAreaRubberBand = None
     toggleControls = [
@@ -254,6 +255,9 @@ class PgRoutingLayer:
         #self.dock.lineEditTargetId.setText('190866')
         
         self.dock.comboBoxFunction.setCurrentIndex(0)
+        self.dock.lineEditIds.setValidator(QRegExpValidator(QRegExp("[0-9,]+"), self.dock))
+        self.dock.lineEditSourceId.setValidator(QIntValidator())
+        self.dock.lineEditTargetId.setValidator(QIntValidator())
         
         self.idsVertexMarkers = []
         self.sourceIdVertexMarker = QgsVertexMarker(self.iface.mapCanvas())
@@ -271,6 +275,7 @@ class PgRoutingLayer:
         self.targetIdRubberBand.setColor(Qt.yellow)
         self.targetIdRubberBand.setWidth(4)
         self.resultNodesVertexMarkers = []
+        self.resultNodesTextAnnotations = []
         self.resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
         self.resultPathRubberBand.setColor(Qt.red)
         self.resultPathRubberBand.setWidth(2)
@@ -300,19 +305,28 @@ class PgRoutingLayer:
         if checked:
             self.dock.lineEditIds.setText("")
             if len(self.idsVertexMarkers) > 0:
-                for vertexMarker in self.idsVertexMarkers:
-                    vertexMarker.setVisible(False)
+                for marker in self.idsVertexMarkers:
+                    marker.setVisible(False)
                 self.idsVertexMarkers = []
             self.iface.mapCanvas().setMapTool(self.idsEmitPoint)
         else:
             self.iface.mapCanvas().unsetMapTool(self.idsEmitPoint)
         
     def setIds(self, pt):
-        vertexMarker = QgsVertexMarker(self.iface.mapCanvas())
-        vertexMarker.setColor(Qt.green)
-        vertexMarker.setPenWidth(2)
-        vertexMarker.setCenter(QgsPoint(pt))
-        self.idsVertexMarkers.append(vertexMarker)
+        args = self.getBaseArguments()
+        result, id, wkt = self.findNearestNode(args, pt)
+        if result:
+            ids = self.dock.lineEditIds.text()
+            if not ids:
+                self.dock.lineEditIds.setText(str(id))
+            else:
+                self.dock.lineEditIds.setText(ids + "," + str(id))
+            geom = QgsGeometry().fromWkt(wkt)
+            vertexMarker = QgsVertexMarker(self.iface.mapCanvas())
+            vertexMarker.setColor(Qt.green)
+            vertexMarker.setPenWidth(2)
+            vertexMarker.setCenter(geom.asPoint())
+            self.idsVertexMarkers.append(vertexMarker)
         
     def selectSourceId(self, checked):
         if checked:
@@ -396,10 +410,14 @@ class PgRoutingLayer:
         func = str(self.dock.comboBoxFunction.currentText())
         args = self.getArguments(self.functionControlsList[func])
         
-        if func != 'alphashape':
+        if func == 'driving_distance':
             for marker in self.resultNodesVertexMarkers:
                 marker.setVisible(False)
             self.resultNodesVertexMarkers = []
+        elif func == 'tsp':
+            for anno in self.resultNodesTextAnnotations:
+                anno.setVisible(False)
+            self.resultNodesTextAnnotations = []
         self.resultPathRubberBand.reset(False)
         self.resultAreaRubberBand.reset(True)
         
@@ -423,7 +441,7 @@ class PgRoutingLayer:
             
             con = db.con
             
-            if (func == 'driving_distance') or (func == 'alphashape'):
+            if (func == 'driving_distance') or (func == 'alphashape') or (func == 'tsp'):
                 srid, geomType = self.getSridAndGeomType(con, args)
                 if geomType == 'ST_MultiLineString':
                     args['startpoint'] = "ST_StartPoint(ST_GeometryN(%(geometry)s, 1))" % args
@@ -431,7 +449,7 @@ class PgRoutingLayer:
                 elif geomType == 'ST_LineString':
                     args['startpoint'] = "ST_StartPoint(%(geometry)s)" % args
                     args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
-            
+                
                 if func == 'alphashape':
                     cur = con.cursor()
                     cur.execute(self.nodeTableCreateQueryFormat % args)
@@ -441,6 +459,7 @@ class PgRoutingLayer:
             rows = cur.fetchall()
             if func.startswith('shortest_path') or (func == 'driving_distance') or (func == 'tsp'):
                 # return columns are 'vertex_id', 'edge_id', 'cost'
+                i = 0
                 for row in rows:
                     cur2 = con.cursor()
                     args['result_vertex_id'] = row[0]
@@ -473,7 +492,7 @@ class PgRoutingLayer:
                             elif geom.wkbType() == QGis.WKBLineString:
                                 for pt in geom.asPolyline():
                                     self.resultPathRubberBand.addPoint(pt)
-                    elif func == 'driving_distance':
+                    elif (func == 'driving_distance'):
                         query2 = """
                             SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
                                 WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
@@ -496,9 +515,31 @@ class PgRoutingLayer:
                         vertexMarker.setIconSize(5)
                         vertexMarker.setCenter(QgsPoint(pt))
                         self.resultNodesVertexMarkers.append(vertexMarker)
-                    elif func == 'tsp':
-                        # TODO:
-                        return
+                    elif (func == 'tsp'):
+                        query2 = """
+                            SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
+                                WHERE %(source)s = %(result_vertex_id)d
+                            UNION
+                            SELECT ST_AsText(%(endpoint)s) FROM %(edge_table)s
+                                WHERE %(target)s = %(result_vertex_id)d
+                        """ % args
+                        cur2.execute(query2)
+                        row2 = cur2.fetchone()
+                        if not row2:
+                            QApplication.restoreOverrideCursor()
+                            QMessageBox.critical(self.dock, self.dock.windowTitle(),
+                                "Invalid result geometry. (vertex_id:%(result_vertex_id)d" % args)
+                            return
+                        geom = QgsGeometry().fromWkt(str(row2[0]))
+                        pt = geom.asPoint()
+                        i += 1
+                        textAnnotation = QgsTextAnnotationItem(self.iface.mapCanvas())
+                        textAnnotation.setMapPosition(geom.asPoint())
+                        textAnnotation.setFrameSize(QSizeF(20,20))
+                        textAnnotation.setOffsetFromReferencePoint(QPointF(20, -40))
+                        textAnnotation.setDocument(QTextDocument(str(i)))
+                        textAnnotation.update()
+                        self.resultNodesTextAnnotations.append(textAnnotation)
             elif func == 'alphashape':
                 # return columns are 'x', 'y'
                 for row in rows:
@@ -536,7 +577,8 @@ class PgRoutingLayer:
         
         query = """
             SELECT %(edge_table)s.*,
-                route.cost AS route_cost
+                route.cost AS route_cost,
+                route.vertex_id AS route_vertex_id
                 FROM %(edge_table)s
                 JOIN
                 (%(path_query)s) AS route
@@ -580,6 +622,10 @@ class PgRoutingLayer:
         self.targetIdRubberBand.reset(False)
         for marker in self.resultNodesVertexMarkers:
             marker.setVisible(False)
+        self.resultNodesVertexMarkers = []
+        for anno in self.resultNodesTextAnnotations:
+            anno.setVisible(False)
+        self.resultNodesTextAnnotations = []
         self.resultPathRubberBand.reset(False)
         self.resultAreaRubberBand.reset(True)
         
@@ -591,49 +637,49 @@ class PgRoutingLayer:
             args['id'] = self.dock.lineEditId.text()
         if 'lineEditSource' in controls:
             args['source'] = self.dock.lineEditSource.text()
-            
+        
         if 'lineEditTarget' in controls:
             args['target'] = self.dock.lineEditTarget.text()
-            
+        
         if 'lineEditCost' in controls:
             args['cost'] = self.dock.lineEditCost.text()
-            
+        
         if 'lineEditReverseCost' in controls:
             args['reverse_cost'] = self.dock.lineEditReverseCost.text()
-            
+        
         if 'lineEditX1' in controls:
             args['x1'] = self.dock.lineEditX1.text()
-            
+        
         if 'lineEditY1' in controls:
             args['y1'] = self.dock.lineEditY1.text()
-            
+        
         if 'lineEditX2' in controls:
             args['x2'] = self.dock.lineEditX2.text()
-            
+        
         if 'lineEditY2' in controls:
             args['y2'] = self.dock.lineEditY2.text()
-            
+        
         if 'lineEditRule' in controls:
             args['rule'] = self.dock.lineEditRule.text()
-            
+        
         if 'lineEditToCost' in controls:
             args['to_cost'] = self.dock.lineEditToCost.text()
         
         if 'lineEditSourceId' in controls:
             args['source_id'] = self.dock.lineEditSourceId.text()
-            
+        
         if 'lineEditTargetId' in controls:
             args['target_id'] = self.dock.lineEditTargetId.text()
-            
+        
         if 'lineEditIds' in controls:
             args['ids'] = self.dock.lineEditIds.text()
-            
+        
         if 'lineEditDistance' in controls:
             args['distance'] = self.dock.lineEditDistance.text()
-            
+        
         if 'checkBoxDirected' in controls:
             args['directed'] = str(self.dock.checkBoxDirected.isChecked()).lower()
-            
+        
         if 'checkBoxHasReverseCost' in controls:
             args['has_reverse_cost'] = str(self.dock.checkBoxHasReverseCost.isChecked()).lower()
             if args['has_reverse_cost'] == 'false':
@@ -682,7 +728,7 @@ class PgRoutingLayer:
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()
-
+            
             con = db.con
             srid, geomType = self.getSridAndGeomType(con, args)
             args['srid'] = srid
@@ -699,7 +745,7 @@ class PgRoutingLayer:
             elif geomType == 'ST_LineString':
                 args['startpoint'] = "ST_StartPoint(%(geometry)s)" % args
                 args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
-                
+            
             # Getting nearest source
             query1 = """
             SELECT %(source)s,
@@ -711,7 +757,7 @@ class PgRoutingLayer:
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
-                    
+            
             ##QMessageBox.information(self.dock, self.dock.windowTitle(), query1)
             cur1 = con.cursor()
             cur1.execute(query1)
@@ -735,7 +781,7 @@ class PgRoutingLayer:
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
-                    
+            
             ##QMessageBox.information(self.dock, self.dock.windowTitle(), query2)
             cur2 = con.cursor()
             cur2.execute(query2)
@@ -786,7 +832,7 @@ class PgRoutingLayer:
         finally:
             if db and db.con:
                 db.con.close()
-
+        
     # emulate "matching.sql" - "find_nearest_link_within_distance"
     def findNearestLink(self, args, pt):
         # distance = 10pix
@@ -794,7 +840,7 @@ class PgRoutingLayer:
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()
-
+            
             con = db.con
             cur = con.cursor()
             cur.execute("""
@@ -821,7 +867,7 @@ class PgRoutingLayer:
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
-                    
+            
             ##QMessageBox.information(self.dock, self.dock.windowTitle(), query1)
             cur = con.cursor()
             cur.execute(query)
@@ -841,4 +887,3 @@ class PgRoutingLayer:
         finally:
             if db and db.con:
                 db.con.close()
-
