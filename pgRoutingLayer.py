@@ -34,6 +34,8 @@ import re
 conn = dbConnection.ConnectionManager()
 
 class PgRoutingLayer:
+    # find nearest node/link radius(pix)
+    FIND_RADIUS = 10
     idsEmitPoint = None
     sourceIdEmitPoint = None
     targetIdEmitPoint = None
@@ -46,19 +48,19 @@ class PgRoutingLayer:
     resultNodesTextAnnotations = None
     resultPathRubberBand = None
     resultAreaRubberBand = None
-    toggleControls = [
+    toggleControlNames = [
         'lineEditId', 'lineEditSource', 'lineEditTarget',
         'lineEditCost', 'lineEditReverseCost',
         'lineEditX1', 'lineEditY1', 'lineEditX2', 'lineEditY2',
         'lineEditRule', 'lineEditToCost',
+        'lineEditIds', 'buttonSelectIds',
         'lineEditSourceId', 'buttonSelectSourceId',
         'lineEditTargetId', 'buttonSelectTargetId',
-        'lineEditIds', 'buttonSelectIds',
         'lineEditDistance',
         'checkBoxDirected', 'checkBoxHasReverseCost',
         'buttonExport'
     ]
-    functionControlsList = {
+    functionControlNamesList = {
         'shortest_path' : [
             'lineEditId', 'lineEditSource', 'lineEditTarget',
             'lineEditCost', 'lineEditReverseCost',
@@ -254,7 +256,6 @@ class PgRoutingLayer:
         #self.dock.lineEditSourceId.setText('191266')
         #self.dock.lineEditTargetId.setText('190866')
         
-        self.dock.comboBoxFunction.setCurrentIndex(0)
         self.dock.lineEditIds.setValidator(QRegExpValidator(QRegExp("[0-9,]+"), self.dock))
         self.dock.lineEditSourceId.setValidator(QIntValidator())
         self.dock.lineEditTargetId.setValidator(QIntValidator())
@@ -282,7 +283,9 @@ class PgRoutingLayer:
         self.resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
         self.resultAreaRubberBand.setColor(Qt.magenta)
         self.resultAreaRubberBand.setWidth(2)
-
+        
+        self.dock.comboBoxFunction.setCurrentIndex(0)
+        
     def show(self):
         self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
         
@@ -292,17 +295,26 @@ class PgRoutingLayer:
         self.iface.removeDockWidget(self.dock)
         
     def updateFunctionEnabled(self, text):
-        for control in self.toggleControls:
-            getattr(self.dock, control).setEnabled(False)
+        self.toggleSelectButton(None)
         
-        for control in self.functionControlsList[str(text)]:
-            getattr(self.dock, control).setEnabled(True)
+        for controlName in self.toggleControlNames:
+            control = getattr(self.dock, controlName)
+            control.setEnabled(False)
+        
+        for controlName in self.functionControlNamesList[str(text)]:
+            control = getattr(self.dock, controlName)
+            control.setEnabled(True)
         
         if (not self.dock.checkBoxHasReverseCost.isChecked()) or (not self.dock.checkBoxHasReverseCost.isEnabled()):
             self.dock.lineEditReverseCost.setEnabled(False)
         
+        # currently edge base function is "shortest_path_shooting_star" only
+        if text == 'shortest_path_shooting_star':
+            self.clear()
+            
     def selectIds(self, checked):
         if checked:
+            self.toggleSelectButton(self.dock.buttonSelectIds)
             self.dock.lineEditIds.setText("")
             if len(self.idsVertexMarkers) > 0:
                 for marker in self.idsVertexMarkers:
@@ -330,6 +342,7 @@ class PgRoutingLayer:
         
     def selectSourceId(self, checked):
         if checked:
+            self.toggleSelectButton(self.dock.buttonSelectSourceId)
             self.dock.lineEditSourceId.setText("")
             self.sourceIdVertexMarker.setVisible(False)
             self.sourceIdRubberBand.reset(False)
@@ -361,10 +374,11 @@ class PgRoutingLayer:
                     for pt in geom.asPolyline():
                         self.sourceIdRubberBand.addPoint(pt)
                 self.dock.buttonSelectSourceId.click()
-        self.iface.mapCanvas().clear()
+        self.iface.mapCanvas().clear() # TODO:
         
     def selectTargetId(self, checked):
         if checked:
+            self.toggleSelectButton(self.dock.buttonSelectTargetId)
             self.dock.lineEditTargetId.setText("")
             self.targetIdVertexMarker.setVisible(False)
             self.targetIdRubberBand.reset(False)
@@ -396,19 +410,19 @@ class PgRoutingLayer:
                     for pt in geom.asPolyline():
                         self.targetIdRubberBand.addPoint(pt)
                 self.dock.buttonSelectTargetId.click()
-        self.iface.mapCanvas().clear()
-    
+        self.iface.mapCanvas().clear() # TODO:
+        
     def updateReverseCostEnabled(self, state):
         if state == Qt.Checked:
             self.dock.lineEditReverseCost.setEnabled(True)
         else:
             self.dock.lineEditReverseCost.setEnabled(False)
-
+        
     def run(self):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         
         func = str(self.dock.comboBoxFunction.currentText())
-        args = self.getArguments(self.functionControlsList[func])
+        args = self.getArguments(self.functionControlNamesList[func])
         
         if func == 'driving_distance':
             for marker in self.resultNodesVertexMarkers:
@@ -551,16 +565,24 @@ class PgRoutingLayer:
             QApplication.restoreOverrideCursor()
             QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
             
+        except SystemError, e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
+            
         finally:
             QApplication.restoreOverrideCursor()
             if db and db.con:
-                db.con.close()
+                try:
+                    db.con.close()
+                except:
+                    QMessageBox.critical(self.dock, self.dock.windowTitle(),
+                        'server closed the connection unexpectedly')
         
     def export(self):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         
         func = str(self.dock.comboBoxFunction.currentText())
-        args = self.getArguments(self.functionControlsList[func])
+        args = self.getArguments(self.functionControlNamesList[func])
         
         empties = []
         for key in args.keys():
@@ -592,7 +614,7 @@ class PgRoutingLayer:
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()
-
+            
             uri = db.getURI()
             uri.setDataSource("", "(" + query + ")", args['geometry'], "", args['id'])
             
@@ -604,10 +626,18 @@ class PgRoutingLayer:
             QApplication.restoreOverrideCursor()
             QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
             
+        except SystemError, e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
+            
         finally:
             QApplication.restoreOverrideCursor()
             if db and db.con:
-                db.con.close()
+                try:
+                    db.con.close()
+                except:
+                    QMessageBox.critical(self.dock, self.dock.windowTitle(),
+                        'server closed the connection unexpectedly')
         
     def clear(self):
         self.dock.lineEditIds.setText("")
@@ -629,6 +659,17 @@ class PgRoutingLayer:
         self.resultPathRubberBand.reset(False)
         self.resultAreaRubberBand.reset(True)
         
+    def toggleSelectButton(self, button):
+        selectButtons = [
+            self.dock.buttonSelectIds,
+            self.dock.buttonSelectSourceId,
+            self.dock.buttonSelectTargetId
+        ]
+        for selectButton in selectButtons:
+            if selectButton != button:
+                if selectButton.isChecked():
+                    selectButton.click()
+
     def getArguments(self, controls):
         args = {}
         args['edge_table'] = self.dock.lineEditTable.text()
@@ -723,8 +764,7 @@ class PgRoutingLayer:
         
     # emulate "matching.sql" - "find_nearest_node_within_distance"
     def findNearestNode(self, args, pt):
-        # distance = 10pix
-        distance = self.iface.mapCanvas().getCoordinateTransform().mapUnitsPerPixel() * 10
+        distance = self.iface.mapCanvas().getCoordinateTransform().mapUnitsPerPixel() * self.FIND_RADIUS
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()
@@ -835,8 +875,7 @@ class PgRoutingLayer:
         
     # emulate "matching.sql" - "find_nearest_link_within_distance"
     def findNearestLink(self, args, pt):
-        # distance = 10pix
-        distance = self.iface.mapCanvas().getCoordinateTransform().mapUnitsPerPixel() * 10
+        distance = self.iface.mapCanvas().getCoordinateTransform().mapUnitsPerPixel() * self.FIND_RADIUS
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()

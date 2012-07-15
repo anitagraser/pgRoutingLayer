@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>242</width>
-    <height>420</height>
+    <width>230</width>
+    <height>378</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,8 +15,20 @@
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>3</number>
+    </property>
+    <property name="sizeConstraint">
+     <enum>QLayout::SetMaximumSize</enum>
+    </property>
+    <property name="margin">
+     <number>6</number>
+    </property>
     <item>
      <layout class="QGridLayout" name="gridLayoutBase">
+      <property name="spacing">
+       <number>3</number>
+      </property>
       <item row="0" column="0">
        <widget class="QLabel" name="labelConnections">
         <property name="sizePolicy">
@@ -115,6 +127,12 @@
     </item>
     <item>
      <widget class="QGroupBox" name="groupBoxSql">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="locale">
        <locale language="English" country="UnitedStates"/>
       </property>
@@ -122,8 +140,20 @@
        <string>sql</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>3</number>
+       </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
+       <property name="margin">
+        <number>6</number>
+       </property>
        <item>
         <layout class="QGridLayout" name="gridLayout">
+         <property name="spacing">
+          <number>3</number>
+         </property>
          <item row="0" column="0">
           <widget class="QLabel" name="labelTable">
            <property name="locale">
@@ -165,8 +195,17 @@
        </item>
        <item>
         <widget class="QScrollArea" name="scrollAreaColumns">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="widgetResizable">
           <bool>true</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
          </property>
          <widget class="QWidget" name="scrollAreaWidgetContents_2">
           <property name="geometry">
@@ -174,12 +213,27 @@
             <x>0</x>
             <y>0</y>
             <width>185</width>
-            <height>300</height>
+            <height>264</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
+           <property name="sizeConstraint">
+            <enum>QLayout::SetDefaultConstraint</enum>
+           </property>
+           <property name="margin">
+            <number>6</number>
+           </property>
+           <property name="spacing">
+            <number>3</number>
+           </property>
            <item row="0" column="0">
             <layout class="QGridLayout" name="gridLayoutColumns">
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
+             </property>
+             <property name="spacing">
+              <number>3</number>
+             </property>
              <item row="0" column="0">
               <widget class="QLabel" name="labelId">
                <property name="locale">
@@ -345,6 +399,9 @@
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayoutIds">
+      <property name="spacing">
+       <number>3</number>
+      </property>
       <item row="1" column="0">
        <widget class="QLabel" name="labelSourceId">
         <property name="locale">
@@ -425,6 +482,12 @@
       </item>
       <item row="0" column="2">
        <widget class="QToolButton" name="buttonSelectIds">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string/>
         </property>
@@ -441,6 +504,12 @@
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayoutOption">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
+      </property>
       <item>
        <widget class="QLabel" name="labelDistance">
         <property name="text">
@@ -468,6 +537,9 @@
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayoutOption1">
+      <property name="spacing">
+       <number>3</number>
+      </property>
       <item>
        <widget class="QCheckBox" name="checkBoxDirected">
         <property name="toolTip">
@@ -492,6 +564,9 @@
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayoutCommands">
+      <property name="spacing">
+       <number>3</number>
+      </property>
       <property name="rightMargin">
        <number>0</number>
       </property>
