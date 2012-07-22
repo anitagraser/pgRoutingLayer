@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>230</width>
-    <height>378</height>
+    <width>250</width>
+    <height>365</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -59,6 +59,12 @@
           <height>0</height>
          </size>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>20</height>
+         </size>
+        </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
@@ -88,39 +94,15 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>20</height>
+         </size>
+        </property>
         <property name="currentIndex">
          <number>-1</number>
         </property>
-        <item>
-         <property name="text">
-          <string>shortest_path</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>shortest_path_astar</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>shortest_path_shooting_star</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>driving_distance</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>alphashape</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>tsp</string>
-         </property>
-        </item>
        </widget>
       </item>
      </layout>
@@ -196,10 +178,16 @@
        <item>
         <widget class="QScrollArea" name="scrollAreaColumns">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>60</height>
+          </size>
          </property>
          <property name="widgetResizable">
           <bool>true</bool>
@@ -212,7 +200,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>185</width>
+            <width>205</width>
             <height>264</height>
            </rect>
           </property>
@@ -398,7 +386,7 @@
      </widget>
     </item>
     <item>
-     <layout class="QGridLayout" name="gridLayoutIds">
+     <layout class="QGridLayout" name="gridLayoutArguments">
       <property name="spacing">
        <number>3</number>
       </property>
@@ -444,12 +432,24 @@
       </item>
       <item row="1" column="2">
        <widget class="QToolButton" name="buttonSelectSourceId">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
         <property name="text">
          <string/>
         </property>
         <property name="icon">
          <iconset>
-          <normaloff>add.png</normaloff>add.png</iconset>
+          <normaloff>icons/add.png</normaloff>icons/add.png</iconset>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -458,12 +458,24 @@
       </item>
       <item row="2" column="2">
        <widget class="QToolButton" name="buttonSelectTargetId">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
         <property name="text">
          <string/>
         </property>
         <property name="icon">
          <iconset>
-          <normaloff>add.png</normaloff>add.png</iconset>
+          <normaloff>icons/add.png</normaloff>icons/add.png</iconset>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -483,80 +495,88 @@
       <item row="0" column="2">
        <widget class="QToolButton" name="buttonSelectIds">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
         </property>
         <property name="text">
          <string/>
         </property>
         <property name="icon">
          <iconset>
-          <normaloff>add.png</normaloff>add.png</iconset>
+          <normaloff>icons/add.png</normaloff>icons/add.png</iconset>
         </property>
         <property name="checkable">
          <bool>true</bool>
         </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonIconOnly</enum>
+        </property>
        </widget>
       </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayoutOption">
-      <property name="spacing">
-       <number>3</number>
-      </property>
-      <property name="sizeConstraint">
-       <enum>QLayout::SetDefaultConstraint</enum>
-      </property>
-      <item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="lineEditDistance">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="3">
+       <layout class="QHBoxLayout" name="horizontalLayoutOption2">
+        <property name="spacing">
+         <number>3</number>
+        </property>
+        <property name="sizeConstraint">
+         <enum>QLayout::SetMaximumSize</enum>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="checkBoxDirected">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>tick if the graph is directed</string>
+          </property>
+          <property name="text">
+           <string>directed</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBoxHasReverseCost">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>if ticked, reverse cost will be used for the cost of the traversal of the edge in the opposite direction</string>
+          </property>
+          <property name="text">
+           <string>has_reverse_cost</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="3" column="0">
        <widget class="QLabel" name="labelDistance">
         <property name="text">
          <string>distance</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEditDistance"/>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayoutOption1">
-      <property name="spacing">
-       <number>3</number>
-      </property>
-      <item>
-       <widget class="QCheckBox" name="checkBoxDirected">
-        <property name="toolTip">
-         <string>tick if the graph is directed</string>
-        </property>
-        <property name="text">
-         <string>directed</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="checkBoxHasReverseCost">
-        <property name="toolTip">
-         <string>if ticked, reverse cost will be used for the cost of the traversal of the edge in the opposite direction</string>
-        </property>
-        <property name="text">
-         <string>has_reverse_cost</string>
         </property>
        </widget>
       </item>
@@ -667,8 +687,6 @@
   <tabstop>buttonSelectSourceId</tabstop>
   <tabstop>lineEditTargetId</tabstop>
   <tabstop>buttonSelectTargetId</tabstop>
-  <tabstop>lineEditDistance</tabstop>
-  <tabstop>checkBoxDirected</tabstop>
   <tabstop>checkBoxHasReverseCost</tabstop>
   <tabstop>buttonRun</tabstop>
   <tabstop>buttonExport</tabstop>

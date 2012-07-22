@@ -34,21 +34,16 @@ import re
 conn = dbConnection.ConnectionManager()
 
 class PgRoutingLayer:
-    # find nearest node/link radius(pix)
-    FIND_RADIUS = 10
-    idsEmitPoint = None
-    sourceIdEmitPoint = None
-    targetIdEmitPoint = None
-    idsVertexMarkers = None
-    sourceIdVertexMarker = None
-    targetIdVertexMarker = None
-    sourceIdRubberBand = None
-    targetIdRubberBand = None
-    resultNodesVertexMarkers = None
-    resultNodesTextAnnotations = None
-    resultPathRubberBand = None
-    resultAreaRubberBand = None
-    toggleControlNames = [
+
+    SUPPORTED_FUNCTIONS = [
+        'shortest_path',
+        'shortest_path_astar',
+        'shortest_path_shooting_star',
+        'driving_distance',
+        'alphashape',
+        'tsp'
+    ]
+    TOGGLE_CONTROL_NAMES = [
         'lineEditId', 'lineEditSource', 'lineEditTarget',
         'lineEditCost', 'lineEditReverseCost',
         'lineEditX1', 'lineEditY1', 'lineEditX2', 'lineEditY2',
@@ -60,136 +55,7 @@ class PgRoutingLayer:
         'checkBoxDirected', 'checkBoxHasReverseCost',
         'buttonExport'
     ]
-    functionControlNamesList = {
-        'shortest_path' : [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost',
-            'buttonExport'
-        ],
-        'shortest_path_astar' : [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditX1', 'lineEditY1', 'lineEditX2', 'lineEditY2',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost',
-            'buttonExport'
-        ],
-        'shortest_path_shooting_star' : [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditX1', 'lineEditY1', 'lineEditX2', 'lineEditY2',
-            'lineEditRule', 'lineEditToCost',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost',
-            'buttonExport'
-        ],
-        'driving_distance' : [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditDistance',
-            'checkBoxDirected', 'checkBoxHasReverseCost'
-        ],
-        'alphashape' : [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditDistance',
-            'checkBoxDirected', 'checkBoxHasReverseCost'
-        ],
-        # 'id' and 'target' are used for finding nearest node
-        'tsp' : [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditX1', 'lineEditY1',
-            'lineEditIds', 'buttonSelectIds',
-            'lineEditSourceId', 'buttonSelectSourceId'
-        ]
-    }
-    nodeTableCreateQueryFormat = """
-        CREATE TEMPORARY TABLE node AS
-            SELECT id,
-                ST_X(%(geometry)s) AS x,
-                ST_Y(%(geometry)s) AS y,
-                %(geometry)s
-                FROM (
-                    SELECT %(source)s AS id,
-                        %(startpoint)s AS %(geometry)s
-                        FROM %(edge_table)s
-                    UNION
-                    SELECT %(target)s AS id,
-                        %(endpoint)s AS %(geometry)s
-                        FROM %(edge_table)s
-                ) AS node;"""
-    functionQueryFormatList = {
-        'shortest_path' : """
-            SELECT * FROM shortest_path('
-                SELECT %(id)s AS id,
-                    %(source)s::int4 AS source,
-                    %(target)s::int4 AS target,
-                    %(cost)s::float8 AS cost%(reverse_cost)s
-                    FROM %(edge_table)s',
-                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""",
-        'shortest_path_astar' : """
-            SELECT * FROM shortest_path_astar('
-                SELECT %(id)s AS id,
-                    %(source)s::int4 AS source,
-                    %(target)s::int4 AS target,
-                    %(cost)s::float8 AS cost%(reverse_cost)s,
-                    %(x1)s::float8 AS x1,
-                    %(y1)s::float8 AS y1,
-                    %(x2)s::float8 AS x2,
-                    %(y2)s::float8 AS y2
-                    FROM %(edge_table)s',
-                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""",
-        'shortest_path_shooting_star' : """
-            SELECT * FROM shortest_path_shooting_star('
-                SELECT %(id)s AS id,
-                    %(source)s::int4 AS source,
-                    %(target)s::int4 AS target,
-                    %(cost)s::float8 AS cost%(reverse_cost)s,
-                    %(x1)s::float8 AS x1,
-                    %(y1)s::float8 AS y1,
-                    %(x2)s::float8 AS x2,
-                    %(y2)s::float8 AS y2,
-                    %(rule)s::text AS rule,
-                    %(to_cost)s::float8
-                    FROM %(edge_table)s',
-                %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""",
-        'driving_distance' : """
-            SELECT * FROM driving_distance('
-                SELECT %(id)s AS id,
-                    %(source)s::int4 AS source,
-                    %(target)s::int4 AS target,
-                    %(cost)s::float8 AS cost%(reverse_cost)s
-                    FROM %(edge_table)s',
-                %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s)""",
-        'alphashape' : """
-            SELECT * FROM alphashape('
-                SELECT *
-                    FROM node
-                    JOIN
-                    (SELECT * FROM driving_distance(''
-                        SELECT %(id)s AS id,
-                            %(source)s::int4 AS source,
-                            %(target)s::int4 AS target,
-                            %(cost)s::float8 AS cost%(reverse_cost)s
-                            FROM %(edge_table)s'',
-                        %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s))
-                    AS dd ON node.id = dd.vertex_id'::text)""",
-        'tsp' : """
-            SELECT * FROM tsp('
-                SELECT DISTINCT %(source)s AS source_id,
-                    %(x1)s::float8 AS x,
-                    %(y1)s::float8 AS y
-                    FROM %(edge_table)s
-                    WHERE %(source)s IN (%(ids)s)',
-                '%(ids)s', %(source_id)s)"""
-    }
+    FIND_RADIUS = 10
     
     def __init__(self, iface):
         # Save reference to the QGIS interface
@@ -236,6 +102,13 @@ class PgRoutingLayer:
         for i in self.actionsDb:
             self.dock.comboConnections.addItem(i)
         
+        self.functions = {}
+        for funcname in self.SUPPORTED_FUNCTIONS:
+            # import the function
+            exec("from functions import %s as function" % funcname)
+            self.functions[funcname] = function.Function(self.dock)
+            self.dock.comboBoxFunction.addItem(funcname)
+        
         #self.dock.lineEditTable.setText('at_2po_4pgr')
         #self.dock.lineEditGeometry.setText('geom_way')
         self.dock.lineEditTable.setText('roads')
@@ -275,14 +148,18 @@ class PgRoutingLayer:
         self.targetIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
         self.targetIdRubberBand.setColor(Qt.yellow)
         self.targetIdRubberBand.setWidth(4)
-        self.resultNodesVertexMarkers = []
-        self.resultNodesTextAnnotations = []
-        self.resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
-        self.resultPathRubberBand.setColor(Qt.red)
-        self.resultPathRubberBand.setWidth(2)
-        self.resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
-        self.resultAreaRubberBand.setColor(Qt.magenta)
-        self.resultAreaRubberBand.setWidth(2)
+        
+        self.canvasItemList = {}
+        self.canvasItemList['markers'] = []
+        self.canvasItemList['annotations'] = []
+        resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
+        resultPathRubberBand.setColor(Qt.red)
+        resultPathRubberBand.setWidth(2)
+        self.canvasItemList['path'] = resultPathRubberBand
+        resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
+        resultAreaRubberBand.setColor(Qt.magenta)
+        resultAreaRubberBand.setWidth(2)
+        self.canvasItemList['area'] = resultAreaRubberBand
         
         self.dock.comboBoxFunction.setCurrentIndex(0)
         
@@ -295,13 +172,15 @@ class PgRoutingLayer:
         self.iface.removeDockWidget(self.dock)
         
     def updateFunctionEnabled(self, text):
+        function = self.functions[str(text)]
+        
         self.toggleSelectButton(None)
         
-        for controlName in self.toggleControlNames:
+        for controlName in self.TOGGLE_CONTROL_NAMES:
             control = getattr(self.dock, controlName)
             control.setEnabled(False)
         
-        for controlName in self.functionControlNamesList[str(text)]:
+        for controlName in function.getControlNames():
             control = getattr(self.dock, controlName)
             control.setEnabled(True)
         
@@ -309,7 +188,7 @@ class PgRoutingLayer:
             self.dock.lineEditReverseCost.setEnabled(False)
         
         # currently edge base function is "shortest_path_shooting_star" only
-        if text == 'shortest_path_shooting_star':
+        if function.isEdgeBase():
             self.clear()
             
     def selectIds(self, checked):
@@ -339,6 +218,7 @@ class PgRoutingLayer:
             vertexMarker.setPenWidth(2)
             vertexMarker.setCenter(geom.asPoint())
             self.idsVertexMarkers.append(vertexMarker)
+            self.iface.mapCanvas().clear() # TODO:
         
     def selectSourceId(self, checked):
         if checked:
@@ -351,9 +231,9 @@ class PgRoutingLayer:
             self.iface.mapCanvas().unsetMapTool(self.sourceIdEmitPoint)
         
     def setSourceId(self, pt):
-        func = str(self.dock.comboBoxFunction.currentText())
+        function = self.functions[str(self.dock.comboBoxFunction.currentText())]
         args = self.getBaseArguments()
-        if func != 'shortest_path_shooting_star':
+        if not function.isEdgeBase():
             result, id, wkt = self.findNearestNode(args, pt)
             if result:
                 self.dock.lineEditSourceId.setText(str(id))
@@ -387,9 +267,9 @@ class PgRoutingLayer:
             self.iface.mapCanvas().unsetMapTool(self.targetIdEmitPoint)
         
     def setTargetId(self, pt):
-        func = str(self.dock.comboBoxFunction.currentText())
+        function = self.functions[str(self.dock.comboBoxFunction.currentText())]
         args = self.getBaseArguments()
-        if func != 'shortest_path_shooting_star':
+        if not function.isEdgeBase():
             result, id, wkt = self.findNearestNode(args, pt)
             if result:
                 self.dock.lineEditTargetId.setText(str(id))
@@ -421,19 +301,8 @@ class PgRoutingLayer:
     def run(self):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         
-        func = str(self.dock.comboBoxFunction.currentText())
-        args = self.getArguments(self.functionControlNamesList[func])
-        
-        if func == 'driving_distance':
-            for marker in self.resultNodesVertexMarkers:
-                marker.setVisible(False)
-            self.resultNodesVertexMarkers = []
-        elif func == 'tsp':
-            for anno in self.resultNodesTextAnnotations:
-                anno.setVisible(False)
-            self.resultNodesTextAnnotations = []
-        self.resultPathRubberBand.reset(False)
-        self.resultAreaRubberBand.reset(True)
+        function = self.functions[str(self.dock.comboBoxFunction.currentText())]
+        args = self.getArguments(function.getControlNames())
         
         empties = []
         for key in args.keys():
@@ -446,120 +315,23 @@ class PgRoutingLayer:
                 'Following argument is not specified.\n' + ','.join(empties))
             return
         
-        query = self.functionQueryFormatList[func] % args
-        ##QMessageBox.information(self.dock, self.dock.windowTitle(), query)
-        
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()
             
             con = db.con
             
-            if (func == 'driving_distance') or (func == 'alphashape') or (func == 'tsp'):
-                srid, geomType = self.getSridAndGeomType(con, args)
-                if geomType == 'ST_MultiLineString':
-                    args['startpoint'] = "ST_StartPoint(ST_GeometryN(%(geometry)s, 1))" % args
-                    args['endpoint'] = "ST_EndPoint(ST_GeometryN(%(geometry)s, 1))" % args
-                elif geomType == 'ST_LineString':
-                    args['startpoint'] = "ST_StartPoint(%(geometry)s)" % args
-                    args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
-                
-                if func == 'alphashape':
-                    cur = con.cursor()
-                    cur.execute(self.nodeTableCreateQueryFormat % args)
-                    
+            srid, geomType = self.getSridAndGeomType(con, args)
+            function.prepare(con, args, geomType, self.canvasItemList)
+            
+            query = function.getQuery(args)
+            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query)
+            
             cur = con.cursor()
             cur.execute(query)
             rows = cur.fetchall()
-            if func.startswith('shortest_path') or (func == 'driving_distance') or (func == 'tsp'):
-                # return columns are 'vertex_id', 'edge_id', 'cost'
-                i = 0
-                for row in rows:
-                    cur2 = con.cursor()
-                    args['result_vertex_id'] = row[0]
-                    args['result_edge_id'] = row[1]
-                    args['result_cost'] = row[2]
-                    if func.startswith('shortest_path'):
-                        if args['result_edge_id'] != -1 or (func == 'shortest_path_shooting_star'):
-                            query2 = """
-                                SELECT ST_AsText(%(geometry)s) FROM %(edge_table)s
-                                    WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
-                                UNION
-                                SELECT ST_AsText(ST_Reverse(%(geometry)s)) FROM %(edge_table)s
-                                    WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d;
-                            """ % args
-                            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query2)
-                            cur2.execute(query2)
-                            row2 = cur2.fetchone()
-                            ##QMessageBox.information(self.dock, self.dock.windowTitle(), str(row2[0]))
-                            if not row2:
-                                # TODO: shooting_star always returns invalid vertex_id!
-                                QApplication.restoreOverrideCursor()
-                                QMessageBox.critical(self.dock, self.dock.windowTitle(),
-                                    "Invalid result geometry. (vertex_id:%(result_vertex_id)d, edge_id:%(result_edge_id)d)" % args)
-                                return
-                            geom = QgsGeometry().fromWkt(str(row2[0]))
-                            if geom.wkbType() == QGis.WKBMultiLineString:
-                                for line in geom.asMultiPolyline():
-                                    for pt in line:
-                                        self.resultPathRubberBand.addPoint(pt)
-                            elif geom.wkbType() == QGis.WKBLineString:
-                                for pt in geom.asPolyline():
-                                    self.resultPathRubberBand.addPoint(pt)
-                    elif (func == 'driving_distance'):
-                        query2 = """
-                            SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
-                                WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
-                            UNION
-                            SELECT ST_AsText(%(endpoint)s) FROM %(edge_table)s
-                                WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
-                        """ % args
-                        cur2.execute(query2)
-                        row2 = cur2.fetchone()
-                        if not row2:
-                            QApplication.restoreOverrideCursor()
-                            QMessageBox.critical(self.dock, self.dock.windowTitle(),
-                                "Invalid result geometry. (vertex_id:%(result_vertex_id)d, edge_id:%(result_edge_id)d)" % args)
-                            return
-                        geom = QgsGeometry().fromWkt(str(row2[0]))
-                        pt = geom.asPoint()
-                        vertexMarker = QgsVertexMarker(self.iface.mapCanvas())
-                        vertexMarker.setColor(Qt.red)
-                        vertexMarker.setPenWidth(2)
-                        vertexMarker.setIconSize(5)
-                        vertexMarker.setCenter(QgsPoint(pt))
-                        self.resultNodesVertexMarkers.append(vertexMarker)
-                    elif (func == 'tsp'):
-                        query2 = """
-                            SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
-                                WHERE %(source)s = %(result_vertex_id)d
-                            UNION
-                            SELECT ST_AsText(%(endpoint)s) FROM %(edge_table)s
-                                WHERE %(target)s = %(result_vertex_id)d
-                        """ % args
-                        cur2.execute(query2)
-                        row2 = cur2.fetchone()
-                        if not row2:
-                            QApplication.restoreOverrideCursor()
-                            QMessageBox.critical(self.dock, self.dock.windowTitle(),
-                                "Invalid result geometry. (vertex_id:%(result_vertex_id)d" % args)
-                            return
-                        geom = QgsGeometry().fromWkt(str(row2[0]))
-                        pt = geom.asPoint()
-                        i += 1
-                        textAnnotation = QgsTextAnnotationItem(self.iface.mapCanvas())
-                        textAnnotation.setMapPosition(geom.asPoint())
-                        textAnnotation.setFrameSize(QSizeF(20,20))
-                        textAnnotation.setOffsetFromReferencePoint(QPointF(20, -40))
-                        textAnnotation.setDocument(QTextDocument(str(i)))
-                        textAnnotation.update()
-                        self.resultNodesTextAnnotations.append(textAnnotation)
-            elif func == 'alphashape':
-                # return columns are 'x', 'y'
-                for row in rows:
-                    x = row[0]
-                    y = row[1]
-                    self.resultAreaRubberBand.addPoint(QgsPoint(x, y))
+            
+            function.draw(rows, con, args, geomType, self.canvasItemList, self.iface.mapCanvas())
             
         except psycopg2.DatabaseError, e:
             QApplication.restoreOverrideCursor()
@@ -568,6 +340,10 @@ class PgRoutingLayer:
         except SystemError, e:
             QApplication.restoreOverrideCursor()
             QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
+            
+        except AssertionError, e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.warning(self.dock, self.dock.windowTitle(), '%s' % e)
             
         finally:
             QApplication.restoreOverrideCursor()
@@ -581,8 +357,8 @@ class PgRoutingLayer:
     def export(self):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         
-        func = str(self.dock.comboBoxFunction.currentText())
-        args = self.getArguments(self.functionControlNamesList[func])
+        function = self.functions[str(self.dock.comboBoxFunction.currentText())]
+        args = self.getArguments(function.getControlNames())
         
         empties = []
         for key in args.keys():
@@ -595,7 +371,7 @@ class PgRoutingLayer:
                 'Following argument is not specified.\n' + ','.join(empties))
             return
         
-        args['path_query'] = self.functionQueryFormatList[func] % args
+        args['path_query'] = function.getQuery(args)
         
         query = """
             SELECT %(edge_table)s.*,
@@ -650,14 +426,14 @@ class PgRoutingLayer:
         self.targetIdVertexMarker.setVisible(False)
         self.sourceIdRubberBand.reset(False)
         self.targetIdRubberBand.reset(False)
-        for marker in self.resultNodesVertexMarkers:
+        for marker in self.canvasItemList['markers']:
             marker.setVisible(False)
-        self.resultNodesVertexMarkers = []
-        for anno in self.resultNodesTextAnnotations:
+        self.canvasItemList['markers'] = []
+        for anno in self.canvasItemList['annotations']:
             anno.setVisible(False)
-        self.resultNodesTextAnnotations = []
-        self.resultPathRubberBand.reset(False)
-        self.resultAreaRubberBand.reset(True)
+        self.canvasItemList['annotations'] = []
+        self.canvasItemList['path'].reset(False)
+        self.canvasItemList['area'].reset(True)
         
     def toggleSelectButton(self, button):
         selectButtons = [
@@ -669,7 +445,7 @@ class PgRoutingLayer:
             if selectButton != button:
                 if selectButton.isChecked():
                     selectButton.click()
-
+        
     def getArguments(self, controls):
         args = {}
         args['edge_table'] = self.dock.lineEditTable.text()
