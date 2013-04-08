@@ -33,3 +33,5 @@ After a restart of QGIS, you should see the plugin available and activated in Pl
 ### Dependencies
 
 You'll need pgRouting up and running to use this plugin.
+
+Additionally, QGIS needs python-psycopg2 installed to be able to connect to the database.
