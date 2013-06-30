@@ -14,10 +14,13 @@ class Function(FunctionBase):
     @classmethod
     def getControlNames(self):
         return [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditDistance',
+            'labelId', 'lineEditId',
+            'labelSource', 'lineEditSource',
+            'labelTarget', 'lineEditTarget',
+            'labelCost', 'lineEditCost',
+            'labelReverseCost', 'lineEditReverseCost',
+            'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId',
+            'labelDistance', 'lineEditDistance',
             'checkBoxDirected', 'checkBoxHasReverseCost'
         ]
     
@@ -26,13 +29,15 @@ class Function(FunctionBase):
         return False
     
     @classmethod
+    def canExport(self):
+        return False
+    
     def prepare(self, con, args, geomType, canvasItemList):
         resultNodesVertexMarkers = canvasItemList['markers']
         for marker in resultNodesVertexMarkers:
             marker.setVisible(False)
         canvasItemList['markers'] = []
     
-    @classmethod
     def getQuery(self, args):
         return """
             SELECT * FROM driving_distance('
@@ -43,7 +48,6 @@ class Function(FunctionBase):
                     FROM %(edge_table)s',
                 %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s)""" % args
     
-    @classmethod
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultNodesVertexMarkers = canvasItemList['markers']
         if geomType == 'ST_MultiLineString':

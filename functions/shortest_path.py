@@ -14,12 +14,14 @@ class Function(FunctionBase):
     @classmethod
     def getControlNames(self):
         return [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost',
-            'buttonExport'
+            'labelId', 'lineEditId',
+            'labelSource', 'lineEditSource',
+            'labelTarget', 'lineEditTarget',
+            'labelCost', 'lineEditCost',
+            'labelReverseCost', 'lineEditReverseCost',
+            'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId',
+            'labelTargetId', 'lineEditTargetId', 'buttonSelectTargetId',
+            'checkBoxDirected', 'checkBoxHasReverseCost'
         ]
     
     @classmethod
@@ -27,11 +29,13 @@ class Function(FunctionBase):
         return False
     
     @classmethod
+    def canExport(self):
+        return True
+    
     def prepare(self, con, args, geomType, canvasItemList):
         resultPathRubberBand = canvasItemList['path']
         resultPathRubberBand.reset(False)
     
-    @classmethod
     def getQuery(self, args):
         return """
             SELECT * FROM shortest_path('
@@ -42,7 +46,6 @@ class Function(FunctionBase):
                     FROM %(edge_table)s',
                 %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""" % args
     
-    @classmethod
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultPathRubberBand = canvasItemList['path']
         for row in rows:

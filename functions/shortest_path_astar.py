@@ -14,13 +14,18 @@ class Function(FunctionBase):
     @classmethod
     def getControlNames(self):
         return [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditCost', 'lineEditReverseCost',
-            'lineEditX1', 'lineEditY1', 'lineEditX2', 'lineEditY2',
-            'lineEditSourceId', 'buttonSelectSourceId',
-            'lineEditTargetId', 'buttonSelectTargetId',
-            'checkBoxDirected', 'checkBoxHasReverseCost',
-            'buttonExport'
+            'labelId', 'lineEditId',
+            'labelSource', 'lineEditSource',
+            'labelTarget', 'lineEditTarget',
+            'labelCost', 'lineEditCost',
+            'labelReverseCost', 'lineEditReverseCost',
+            'labelX1', 'lineEditX1',
+            'labelY1', 'lineEditY1',
+            'labelX2', 'lineEditX2',
+            'labelY2', 'lineEditY2',
+            'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId',
+            'labelTargetId', 'lineEditTargetId', 'buttonSelectTargetId',
+            'checkBoxDirected', 'checkBoxHasReverseCost'
         ]
     
     @classmethod
@@ -28,11 +33,13 @@ class Function(FunctionBase):
         return False
     
     @classmethod
+    def canExport(self):
+        return True
+    
     def prepare(self, con, args, geomType, canvasItemList):
         resultPathRubberBand = canvasItemList['path']
         resultPathRubberBand.reset(False)
     
-    @classmethod
     def getQuery(self, args):
         return """
             SELECT * FROM shortest_path_astar('
@@ -47,7 +54,6 @@ class Function(FunctionBase):
                     FROM %(edge_table)s',
                 %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""" % args
     
-    @classmethod
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultPathRubberBand = canvasItemList['path']
         for row in rows:

@@ -14,14 +14,15 @@ class FunctionBase(object):
         return False
     
     @classmethod
+    def canExport(self):
+        return False
+    
     def prepare(self, con, args, geomType, canvasItemList):
         pass
     
-    @classmethod
     def getQuery(self, args):
         return ''
     
-    @classmethod
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         pass
     

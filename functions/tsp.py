@@ -15,10 +15,13 @@ class Function(FunctionBase):
     def getControlNames(self):
         # 'id' and 'target' are used for finding nearest node
         return [
-            'lineEditId', 'lineEditSource', 'lineEditTarget',
-            'lineEditX1', 'lineEditY1',
-            'lineEditIds', 'buttonSelectIds',
-            'lineEditSourceId', 'buttonSelectSourceId'
+            'labelId', 'lineEditId',
+            'labelSource', 'lineEditSource',
+            'labelTarget', 'lineEditTarget',
+            'labelX1', 'lineEditX1',
+            'labelY1', 'lineEditY1',
+            'labelIds', 'lineEditIds', 'buttonSelectIds',
+            'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId'
         ]
     
     @classmethod
@@ -26,13 +29,15 @@ class Function(FunctionBase):
         return False
     
     @classmethod
+    def canExport(self):
+        return False
+    
     def prepare(self, con, args, geomType, canvasItemList):
         resultNodesTextAnnotations = canvasItemList['annotations']
         for anno in resultNodesTextAnnotations:
             anno.setVisible(False)
         canvasItemList['annotations'] = []
     
-    @classmethod
     def getQuery(self, args):
         return """
             SELECT * FROM tsp('
@@ -43,7 +48,6 @@ class Function(FunctionBase):
                     WHERE %(source)s IN (%(ids)s)',
                 '%(ids)s', %(source_id)s)""" % args
     
-    @classmethod
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultNodesTextAnnotations = canvasItemList['annotations']
         if geomType == 'ST_MultiLineString':
