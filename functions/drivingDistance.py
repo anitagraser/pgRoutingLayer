@@ -9,7 +9,7 @@ class Function(FunctionBase):
     
     @classmethod
     def getName(self):
-        return 'driving_distance'
+        return 'drivingDistance'
     
     @classmethod
     def getControlNames(self):
@@ -40,7 +40,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM driving_distance('
+            SELECT * FROM pgr_drivingDistance('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,
@@ -58,9 +58,9 @@ class Function(FunctionBase):
             args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
         for row in rows:
             cur2 = con.cursor()
-            args['result_vertex_id'] = row[0]
-            args['result_edge_id'] = row[1]
-            args['result_cost'] = row[2]
+            args['result_vertex_id'] = row[1]
+            args['result_edge_id'] = row[2]
+            args['result_cost'] = row[3]
             query2 = """
                 SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
                     WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d

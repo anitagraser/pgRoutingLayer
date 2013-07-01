@@ -62,18 +62,18 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM alphashape('
+            SELECT * FROM pgr_alphashape('
                 SELECT *
                     FROM node
                     JOIN
-                    (SELECT * FROM driving_distance(''
+                    (SELECT * FROM pgr_drivingDistance(''
                         SELECT %(id)s AS id,
                             %(source)s::int4 AS source,
                             %(target)s::int4 AS target,
                             %(cost)s::float8 AS cost%(reverse_cost)s
                             FROM %(edge_table)s'',
                         %(source_id)s, %(distance)s, %(directed)s, %(has_reverse_cost)s))
-                    AS dd ON node.id = dd.vertex_id'::text)""" % args
+                    AS dd ON node.id = dd.id1'::text)""" % args
     
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultAreaRubberBand = canvasItemList['area']

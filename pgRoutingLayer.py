@@ -36,14 +36,14 @@ conn = dbConnection.ConnectionManager()
 class PgRoutingLayer:
 
     SUPPORTED_FUNCTIONS = [
-        'shortest_path',
-        'shortest_path_astar',
-        'shortest_path_shooting_star',
-        'driving_distance',
+        'dijkstra',
+        'astar',
+        'shootingStar',
+        'drivingDistance',
         'alphashape',
-        'tsp',
-        'turn_restrict_shortest_path_vertex',
-        'turn_restrict_shortest_path_edge'
+        'tsp_euclid',
+        'trsp_vertex',
+        'trsp_edge'
     ]
     TOGGLE_CONTROL_NAMES = [
         'labelId', 'lineEditId',
@@ -726,7 +726,7 @@ class PgRoutingLayer:
         idx = self.dock.comboConnections.findText(settings.value('/pgRoutingTester/Database', QVariant('')).toString())
         if idx >= 0:
             self.dock.comboConnections.setCurrentIndex(idx)
-        idx = self.dock.comboBoxFunction.findText(settings.value('/pgRoutingTester/Function', QVariant('shortest_path')).toString())
+        idx = self.dock.comboBoxFunction.findText(settings.value('/pgRoutingTester/Function', QVariant('dijkstra')).toString())
         if idx >= 0:
             self.dock.comboBoxFunction.setCurrentIndex(idx)
         

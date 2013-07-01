@@ -9,7 +9,7 @@ class Function(FunctionBase):
     
     @classmethod
     def getName(self):
-        return 'turn_restrict_shortest_path(edge)'
+        return 'trsp(edge)'
     
     @classmethod
     def getControlNames(self):
@@ -41,7 +41,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM turn_restrict_shortest_path('
+            SELECT * FROM pgr_trsp('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,
@@ -56,9 +56,9 @@ class Function(FunctionBase):
         for row in rows:
             query2 = ""
             cur2 = con.cursor()
-            args['result_vertex_id'] = row[0]
-            args['result_edge_id'] = row[1]
-            args['result_cost'] = row[2]
+            args['result_vertex_id'] = row[1]
+            args['result_edge_id'] = row[2]
+            args['result_cost'] = row[3]
             if i == 0:
                 if row[0] == -1:
                     query2 = """

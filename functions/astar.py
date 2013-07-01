@@ -9,7 +9,7 @@ class Function(FunctionBase):
     
     @classmethod
     def getName(self):
-        return 'shortest_path_shooting_star'
+        return 'astar'
     
     @classmethod
     def getControlNames(self):
@@ -23,8 +23,6 @@ class Function(FunctionBase):
             'labelY1', 'lineEditY1',
             'labelX2', 'lineEditX2',
             'labelY2', 'lineEditY2',
-            'labelRule', 'lineEditRule',
-            'labelToCost', 'lineEditToCost',
             'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId',
             'labelTargetId', 'lineEditTargetId', 'buttonSelectTargetId',
             'checkBoxDirected', 'checkBoxHasReverseCost'
@@ -32,7 +30,7 @@ class Function(FunctionBase):
     
     @classmethod
     def isEdgeBase(self):
-        return True
+        return False
     
     @classmethod
     def canExport(self):
@@ -44,7 +42,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM shortest_path_shooting_star('
+            SELECT * FROM pgr_astar('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,
@@ -52,9 +50,7 @@ class Function(FunctionBase):
                     %(x1)s::float8 AS x1,
                     %(y1)s::float8 AS y1,
                     %(x2)s::float8 AS x2,
-                    %(y2)s::float8 AS y2,
-                    %(rule)s::text AS rule,
-                    %(to_cost)s::float8
+                    %(y2)s::float8 AS y2
                     FROM %(edge_table)s',
                 %(source_id)s, %(target_id)s, %(directed)s, %(has_reverse_cost)s)""" % args
     
@@ -62,31 +58,31 @@ class Function(FunctionBase):
         resultPathRubberBand = canvasItemList['path']
         for row in rows:
             cur2 = con.cursor()
-            args['result_vertex_id'] = row[0]
-            args['result_edge_id'] = row[1]
-            args['result_cost'] = row[2]
-            query2 = """
-                SELECT ST_AsText(%(geometry)s) FROM %(edge_table)s
-                    WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
-                UNION
-                SELECT ST_AsText(ST_Reverse(%(geometry)s)) FROM %(edge_table)s
-                    WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d;
-            """ % args
-            ##QMessageBox.information(self.ui, self.ui.windowTitle(), query2)
-            cur2.execute(query2)
-            row2 = cur2.fetchone()
-            ##QMessageBox.information(self.ui, self.ui.windowTitle(), str(row2[0]))
-            # TODO: shooting_star always returns invalid vertex_id!
-            assert row2, "Invalid result geometry. (vertex_id:%(result_vertex_id)d, edge_id:%(result_edge_id)d)" % args
-            
-            geom = QgsGeometry().fromWkt(str(row2[0]))
-            if geom.wkbType() == QGis.WKBMultiLineString:
-                for line in geom.asMultiPolyline():
-                    for pt in line:
+            args['result_vertex_id'] = row[1]
+            args['result_edge_id'] = row[2]
+            args['result_cost'] = row[3]
+            if args['result_edge_id'] != -1:
+                query2 = """
+                    SELECT ST_AsText(%(geometry)s) FROM %(edge_table)s
+                        WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
+                    UNION
+                    SELECT ST_AsText(ST_Reverse(%(geometry)s)) FROM %(edge_table)s
+                        WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d;
+                """ % args
+                ##QMessageBox.information(self.ui, self.ui.windowTitle(), query2)
+                cur2.execute(query2)
+                row2 = cur2.fetchone()
+                ##QMessageBox.information(self.ui, self.ui.windowTitle(), str(row2[0]))
+                assert row2, "Invalid result geometry. (vertex_id:%(result_vertex_id)d, edge_id:%(result_edge_id)d)" % args
+                
+                geom = QgsGeometry().fromWkt(str(row2[0]))
+                if geom.wkbType() == QGis.WKBMultiLineString:
+                    for line in geom.asMultiPolyline():
+                        for pt in line:
+                            resultPathRubberBand.addPoint(pt)
+                elif geom.wkbType() == QGis.WKBLineString:
+                    for pt in geom.asPolyline():
                         resultPathRubberBand.addPoint(pt)
-            elif geom.wkbType() == QGis.WKBLineString:
-                for pt in geom.asPolyline():
-                    resultPathRubberBand.addPoint(pt)
     
     def __init__(self, ui):
         FunctionBase.__init__(self, ui)
