@@ -385,11 +385,11 @@ class PgRoutingLayer:
         query = """
             SELECT %(edge_table)s.*,
                 route.cost AS route_cost,
-                route.vertex_id AS route_vertex_id
+                route.id1 AS route_vertex_id
                 FROM %(edge_table)s
                 JOIN
                 (%(path_query)s) AS route
-                ON %(edge_table)s.%(id)s = route.edge_id""" % args
+                ON %(edge_table)s.%(id)s = route.id2""" % args
         
         query = query.replace('\n', ' ')
         query = re.sub(r'\s+', ' ', query)
