@@ -20,8 +20,11 @@ class Function(FunctionBase):
             'labelTarget', 'lineEditTarget',
             'labelX1', 'lineEditX1',
             'labelY1', 'lineEditY1',
+            'labelX2', 'lineEditX2',
+            'labelY2', 'lineEditY2',
             'labelIds', 'lineEditIds', 'buttonSelectIds',
-            'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId'
+            'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId',
+            'labelTargetId', 'lineEditTargetId', 'buttonSelectTargetId'
         ]
     
     @classmethod
@@ -41,12 +44,12 @@ class Function(FunctionBase):
     def getQuery(self, args):
         return """
             SELECT * FROM pgr_tsp('
-                SELECT DISTINCT %(source)s AS source_id,
-                    %(x1)s::float8 AS x,
-                    %(y1)s::float8 AS y
-                    FROM %(edge_table)s
-                    WHERE %(source)s IN (%(ids)s)',
-                '%(ids)s', %(source_id)s)""" % args
+                SELECT DISTINCT id, x, y FROM
+                    (SELECT DISTINCT %(source)s AS id, %(x1)s::float8 AS x, %(y1)s::float8 AS y FROM %(edge_table)s
+                    UNION
+                    SELECT DISTINCT %(target)s AS id, %(x2)s::float8 AS x, %(y2)s::float8 AS y FROM %(edge_table)s)
+                    AS node WHERE node.id IN (%(ids)s)',
+                %(source_id)s)""" % args
     
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultNodesTextAnnotations = canvasItemList['annotations']
@@ -65,14 +68,14 @@ class Function(FunctionBase):
             args['result_cost'] = row[3]
             query2 = """
                 SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
-                    WHERE %(source)s = %(result_id1)d
+                    WHERE %(source)s = %(result_id2)d
                 UNION
                 SELECT ST_AsText(%(endpoint)s) FROM %(edge_table)s
-                    WHERE %(target)s = %(result_id1)d
+                    WHERE %(target)s = %(result_id2)d
             """ % args
             cur2.execute(query2)
             row2 = cur2.fetchone()
-            assert row2, "Invalid result geometry. (id1:%(result_id1)d)" % args
+            assert row2, "Invalid result geometry. (id1:%(result_id2)d)" % args
             
             geom = QgsGeometry().fromWkt(str(row2[0]))
             pt = geom.asPoint()
