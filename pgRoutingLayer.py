@@ -1,4 +1,4 @@
-﻿"""
+"""
 /***************************************************************************
  pgRouting Layer
                                  a QGIS plugin
@@ -340,6 +340,8 @@ class PgRoutingLayer:
             cur.execute(query)
             rows = cur.fetchall()
             
+            args['srid'] = srid
+            args['canvas_srid'] = self.iface.mapCanvas().mapRenderer().destinationSrs().epsg()
             function.draw(rows, con, args, geomType, self.canvasItemList, self.iface.mapCanvas())
             
         except psycopg2.DatabaseError, e:
@@ -559,19 +561,29 @@ class PgRoutingLayer:
     # emulate "matching.sql" - "find_nearest_node_within_distance"
     def findNearestNode(self, args, pt):
         distance = self.iface.mapCanvas().getCoordinateTransform().mapUnitsPerPixel() * self.FIND_RADIUS
+        rect = QgsRectangle(pt.x() - distance, pt.y() - distance, pt.x() + distance, pt.y() + distance)
+        canvasCrs = self.iface.mapCanvas().mapRenderer().destinationSrs()
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()
             
             con = db.con
             srid, geomType = self.getSridAndGeomType(con, args)
+            if self.iface.mapCanvas().mapRenderer().hasCrsTransformEnabled():
+                layerCrs = QgsCoordinateReferenceSystem()
+                layerCrs.createFromEpsg(srid)
+                trans = QgsCoordinateTransform(canvasCrs, layerCrs)
+                pt = trans.transform(pt)
+                rect = trans.transform(rect)
+            
+            args['canvas_srid'] = canvasCrs.epsg()
             args['srid'] = srid
             args['x'] = pt.x()
             args['y'] = pt.y()
-            args['minx'] = pt.x() - distance
-            args['miny'] = pt.y() - distance
-            args['maxx'] = pt.x() + distance
-            args['maxy'] = pt.y() + distance
+            args['minx'] = rect.xMinimum()
+            args['miny'] = rect.yMinimum()
+            args['maxx'] = rect.xMaximum()
+            args['maxy'] = rect.yMaximum()
             
             if geomType == 'ST_MultiLineString':
                 args['startpoint'] = "ST_StartPoint(ST_GeometryN(%(geometry)s, 1))" % args
@@ -587,7 +599,7 @@ class PgRoutingLayer:
                     %(startpoint)s,
                     ST_GeomFromText('POINT(%(x)f %(y)f)', %(srid)d)
                 ) AS dist,
-                ST_AsText(%(startpoint)s)
+                ST_AsText(ST_Transform(%(startpoint)s, %(canvas_srid)d))
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
@@ -611,7 +623,7 @@ class PgRoutingLayer:
                     %(endpoint)s,
                     ST_GeomFromText('POINT(%(x)f %(y)f)', %(srid)d)
                 ) AS dist,
-                ST_AsText(%(endpoint)s)
+                ST_AsText(ST_Transform(%(endpoint)s, %(canvas_srid)d))
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
@@ -670,24 +682,30 @@ class PgRoutingLayer:
     # emulate "matching.sql" - "find_nearest_link_within_distance"
     def findNearestLink(self, args, pt):
         distance = self.iface.mapCanvas().getCoordinateTransform().mapUnitsPerPixel() * self.FIND_RADIUS
+        rect = QgsRectangle(pt.x() - distance, pt.y() - distance, pt.x() + distance, pt.y() + distance)
+        canvasCrs = self.iface.mapCanvas().mapRenderer().destinationSrs()
         try:
             dados = str(self.dock.comboConnections.currentText())
             db = self.actionsDb[dados].connect()
             
             con = db.con
             cur = con.cursor()
-            cur.execute("""
-                SELECT ST_SRID(%(geometry)s)
-                    FROM %(edge_table)s
-                    WHERE %(id)s = (SELECT MIN(%(id)s) FROM %(edge_table)s)""" % args)
-            row = cur.fetchone()
-            args['srid'] = row[0]
+            srid, geomType = self.getSridAndGeomType(con, args)
+            if self.iface.mapCanvas().mapRenderer().hasCrsTransformEnabled():
+                layerCrs = QgsCoordinateReferenceSystem()
+                layerCrs.createFromEpsg(srid)
+                trans = QgsCoordinateTransform(canvasCrs, layerCrs)
+                pt = trans.transform(pt)
+                rect = trans.transform(rect)
+            
+            args['canvas_srid'] = canvasCrs.epsg()
+            args['srid'] = srid
             args['x'] = pt.x()
             args['y'] = pt.y()
-            args['minx'] = pt.x() - distance
-            args['miny'] = pt.y() - distance
-            args['maxx'] = pt.x() + distance
-            args['maxy'] = pt.y() + distance
+            args['minx'] = rect.xMinimum()
+            args['miny'] = rect.yMinimum()
+            args['maxx'] = rect.xMaximum()
+            args['maxy'] = rect.yMaximum()
             
             # Searching for a link within the distance
             query = """
@@ -696,7 +714,7 @@ class PgRoutingLayer:
                     %(geometry)s,
                     ST_GeomFromText('POINT(%(x)f %(y)f)', %(srid)d)
                 ) AS dist,
-                ST_AsText(%(geometry)s)
+                ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d))
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args

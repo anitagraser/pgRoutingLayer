@@ -49,7 +49,7 @@ class Function(FunctionBase):
                     UNION
                     SELECT DISTINCT %(target)s AS id, %(x2)s::float8 AS x, %(y2)s::float8 AS y FROM %(edge_table)s)
                     AS node WHERE node.id IN (%(ids)s)',
-                %(source_id)s)""" % args
+                %(source_id)s, %(target_id)s)""" % args
     
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultNodesTextAnnotations = canvasItemList['annotations']
@@ -67,10 +67,10 @@ class Function(FunctionBase):
             args['result_id2'] = row[2]
             args['result_cost'] = row[3]
             query2 = """
-                SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
+                SELECT ST_AsText(ST_Transform(%(startpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
                     WHERE %(source)s = %(result_id2)d
                 UNION
-                SELECT ST_AsText(%(endpoint)s) FROM %(edge_table)s
+                SELECT ST_AsText(ST_Transform(%(endpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
                     WHERE %(target)s = %(result_id2)d
             """ % args
             cur2.execute(query2)

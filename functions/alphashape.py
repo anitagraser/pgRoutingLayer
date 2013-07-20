@@ -77,11 +77,22 @@ class Function(FunctionBase):
     
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultAreaRubberBand = canvasItemList['area']
+        trans = None
+        if mapCanvas.mapRenderer().hasCrsTransformEnabled:
+            canvasCrs = mapCanvas.mapRenderer().destinationSrs()
+            layerCrs = QgsCoordinateReferenceSystem()
+            layerCrs.createFromEpsg(args['srid'])
+            trans = QgsCoordinateTransform(layerCrs, canvasCrs)
+        
         # return columns are 'x', 'y'
         for row in rows:
             x = row[0]
             y = row[1]
-            resultAreaRubberBand.addPoint(QgsPoint(x, y))
+            pt = QgsPoint(x, y)
+            if trans:
+                pt = trans.transform(pt)
+            
+            resultAreaRubberBand.addPoint(pt)
     
     def __init__(self, ui):
         FunctionBase.__init__(self, ui)

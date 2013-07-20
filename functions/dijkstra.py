@@ -55,10 +55,10 @@ class Function(FunctionBase):
             args['result_cost'] = row[3]
             if args['result_edge_id'] != -1:
                 query2 = """
-                    SELECT ST_AsText(%(geometry)s) FROM %(edge_table)s
+                    SELECT ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d)) FROM %(edge_table)s
                         WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
                     UNION
-                    SELECT ST_AsText(ST_Reverse(%(geometry)s)) FROM %(edge_table)s
+                    SELECT ST_AsText(ST_Transform(ST_Reverse(%(geometry)s), %(canvas_srid)d)) FROM %(edge_table)s
                         WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d;
                 """ % args
                 ##QMessageBox.information(self.ui, self.ui.windowTitle(), query2)

@@ -62,32 +62,32 @@ class Function(FunctionBase):
             if i == 0:
                 if row[0] == -1:
                     query2 = """
-                        SELECT ST_AsText(ST_Reverse(ST_Line_Substring(%(geometry)s, %(source_pos)s, 1.0))) FROM %(edge_table)s
+                        SELECT ST_AsText(ST_Transform(ST_Reverse(ST_Line_Substring(%(geometry)s, %(source_pos)s, 1.0)), %(canvas_srid)d)) FROM %(edge_table)s
                             WHERE %(id)s = %(result_edge_id)s;
                     """ % args
                 else:
                     query2 = """
-                        SELECT ST_AsText(ST_Line_Substring(%(geometry)s, %(source_pos)s, 1.0)) FROM %(edge_table)s
+                        SELECT ST_AsText(ST_Transform(ST_Line_Substring(%(geometry)s, %(source_pos)s, 1.0), %(canvas_srid)d)) FROM %(edge_table)s
                             WHERE %(id)s = %(result_edge_id)s;
                     """ % args
                 
             elif i == (count - 1):
                 if row[0] == -1:
                     query2 = """
-                        SELECT ST_AsText(ST_Line_Substring(%(geometry)s, 0.0, %(target_pos)s)) FROM %(edge_table)s
+                        SELECT ST_AsText(ST_Transform(ST_Line_Substring(%(geometry)s, 0.0, %(target_pos)s), %(canvas_srid)d)) FROM %(edge_table)s
                             WHERE %(id)s = %(result_edge_id)s;
                     """ % args
                 else:
                     query2 = """
-                        SELECT ST_AsText(ST_Reverse(ST_Line_Substring(%(geometry)s, 0.0, %(target_pos)s))) FROM %(edge_table)s
+                        SELECT ST_AsText(ST_Transform(ST_Reverse(ST_Line_Substring(%(geometry)s, 0.0, %(target_pos)s)), %(canvas_srid)d)) FROM %(edge_table)s
                             WHERE %(id)s = %(result_edge_id)s;
                     """ % args
             else:
                 query2 = """
-                    SELECT ST_AsText(%(geometry)s) FROM %(edge_table)s
+                    SELECT ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d)) FROM %(edge_table)s
                         WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
                     UNION
-                    SELECT ST_AsText(ST_Reverse(%(geometry)s)) FROM %(edge_table)s
+                    SELECT ST_AsText(ST_Transform(ST_Reverse(%(geometry)s), %(canvas_srid)d)) FROM %(edge_table)s
                         WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d;
                 """ % args
             

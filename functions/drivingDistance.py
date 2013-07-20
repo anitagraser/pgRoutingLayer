@@ -62,10 +62,10 @@ class Function(FunctionBase):
             args['result_edge_id'] = row[2]
             args['result_cost'] = row[3]
             query2 = """
-                SELECT ST_AsText(%(startpoint)s) FROM %(edge_table)s
+                SELECT ST_AsText(ST_Transform(%(startpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
                     WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
                 UNION
-                SELECT ST_AsText(%(endpoint)s) FROM %(edge_table)s
+                SELECT ST_AsText(ST_Transform(%(endpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
                     WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
             """ % args
             cur2.execute(query2)
