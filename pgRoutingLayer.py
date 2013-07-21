@@ -43,7 +43,10 @@ class PgRoutingLayer:
         'alphashape',
         'tsp_euclid',
         'trsp_vertex',
-        'trsp_edge'
+        'trsp_edge',
+        'kdijkstra_cost',
+        'bdDijkstra',
+        'bdAstar'
     ]
     TOGGLE_CONTROL_NAMES = [
         'labelId', 'lineEditId',
@@ -61,6 +64,7 @@ class PgRoutingLayer:
         'labelSourceId', 'lineEditSourceId', 'buttonSelectSourceId',
         'labelSourcePos', 'lineEditSourcePos',
         'labelTargetId', 'lineEditTargetId', 'buttonSelectTargetId',
+        'labelTargetIds', 'lineEditTargetIds', 'buttonSelectTargetIds',
         'labelTargetPos', 'lineEditTargetPos',
         'labelDistance', 'lineEditDistance',
         'checkBoxDirected', 'checkBoxHasReverseCost',
@@ -90,6 +94,8 @@ class PgRoutingLayer:
         #self.sourceIdEmitPoint.setButton(buttonSelectSourceId)
         self.targetIdEmitPoint = QgsMapToolEmitPoint(self.iface.mapCanvas())
         #self.targetIdEmitPoint.setButton(buttonSelectTargetId)
+        self.targetIdsEmitPoint = QgsMapToolEmitPoint(self.iface.mapCanvas())
+        #self.targetIdsEmitPoint.setButton(buttonSelectTargetId)
         
         #connect the action to each method
         QObject.connect(self.action, SIGNAL("triggered()"), self.show)
@@ -100,6 +106,8 @@ class PgRoutingLayer:
         QObject.connect(self.sourceIdEmitPoint, SIGNAL("canvasClicked(const QgsPoint&, Qt::MouseButton)"), self.setSourceId)
         QObject.connect(self.dock.buttonSelectTargetId, SIGNAL("clicked(bool)"), self.selectTargetId)
         QObject.connect(self.targetIdEmitPoint, SIGNAL("canvasClicked(const QgsPoint&, Qt::MouseButton)"), self.setTargetId)
+        QObject.connect(self.dock.buttonSelectTargetIds, SIGNAL("clicked(bool)"), self.selectTargetIds)
+        QObject.connect(self.targetIdsEmitPoint, SIGNAL("canvasClicked(const QgsPoint&, Qt::MouseButton)"), self.setTargetIds)
         QObject.connect(self.dock.checkBoxHasReverseCost, SIGNAL("stateChanged(int)"), self.updateReverseCostEnabled)
         QObject.connect(self.dock.buttonRun, SIGNAL("clicked()"), self.run)
         QObject.connect(self.dock.buttonExport, SIGNAL("clicked()"), self.export)
@@ -132,6 +140,7 @@ class PgRoutingLayer:
         self.dock.lineEditDistance.setValidator(QDoubleValidator())
         
         self.idsVertexMarkers = []
+        self.targetIdsVertexMarkers = []
         self.sourceIdVertexMarker = QgsVertexMarker(self.iface.mapCanvas())
         self.sourceIdVertexMarker.setColor(Qt.blue)
         self.sourceIdVertexMarker.setPenWidth(2)
@@ -301,6 +310,35 @@ class PgRoutingLayer:
                 self.dock.buttonSelectTargetId.click()
         self.iface.mapCanvas().clear() # TODO:
         
+    def selectTargetIds(self, checked):
+        if checked:
+            self.toggleSelectButton(self.dock.buttonSelectTargetIds)
+            self.dock.lineEditTargetIds.setText("")
+            if len(self.targetIdsVertexMarkers) > 0:
+                for marker in self.targetIdsVertexMarkers:
+                    marker.setVisible(False)
+                self.targetIdsVertexMarkers = []
+            self.iface.mapCanvas().setMapTool(self.targetIdsEmitPoint)
+        else:
+            self.iface.mapCanvas().unsetMapTool(self.targetIdsEmitPoint)
+        
+    def setTargetIds(self, pt):
+        args = self.getBaseArguments()
+        result, id, wkt = self.findNearestNode(args, pt)
+        if result:
+            ids = self.dock.lineEditTargetIds.text()
+            if not ids:
+                self.dock.lineEditTargetIds.setText(str(id))
+            else:
+                self.dock.lineEditTargetIds.setText(ids + "," + str(id))
+            geom = QgsGeometry().fromWkt(wkt)
+            vertexMarker = QgsVertexMarker(self.iface.mapCanvas())
+            vertexMarker.setColor(Qt.green)
+            vertexMarker.setPenWidth(2)
+            vertexMarker.setCenter(geom.asPoint())
+            self.targetIdsVertexMarkers.append(vertexMarker)
+            self.iface.mapCanvas().clear() # TODO:
+        
     def updateReverseCostEnabled(self, state):
         if state == Qt.Checked:
             self.dock.lineEditReverseCost.setEnabled(True)
@@ -431,6 +469,10 @@ class PgRoutingLayer:
         for marker in self.idsVertexMarkers:
             marker.setVisible(False)
         self.idsVertexMarkers = []
+        self.dock.lineEditTargetIds.setText("")
+        for marker in self.targetIdsVertexMarkers:
+            marker.setVisible(False)
+        self.targetIdsVertexMarkers = []
         self.dock.lineEditSourceId.setText("")
         self.sourceIdVertexMarker.setVisible(False)
         self.dock.lineEditTargetId.setText("")
@@ -493,6 +535,9 @@ class PgRoutingLayer:
         if 'lineEditToCost' in controls:
             args['to_cost'] = self.dock.lineEditToCost.text()
         
+        if 'lineEditIds' in controls:
+            args['ids'] = self.dock.lineEditIds.text()
+        
         if 'lineEditSourceId' in controls:
             args['source_id'] = self.dock.lineEditSourceId.text()
         
@@ -505,8 +550,8 @@ class PgRoutingLayer:
         if 'lineEditTargetPos' in controls:
             args['target_pos'] = self.dock.lineEditTargetPos.text()
         
-        if 'lineEditIds' in controls:
-            args['ids'] = self.dock.lineEditIds.text()
+        if 'lineEditTargetIds' in controls:
+            args['target_ids'] = self.dock.lineEditTargetIds.text()
         
         if 'lineEditDistance' in controls:
             args['distance'] = self.dock.lineEditDistance.text()
@@ -761,11 +806,13 @@ class PgRoutingLayer:
         self.dock.lineEditY2.setText(settings.value('/pgRoutingTester/sql/y2', QVariant('y2')).toString())
         self.dock.lineEditRule.setText(settings.value('/pgRoutingTester/sql/rule', QVariant('rule')).toString())
         self.dock.lineEditToCost.setText(settings.value('/pgRoutingTester/sql/to_cost', QVariant('to_cost')).toString())
+        
         self.dock.lineEditIds.setText(settings.value('/pgRoutingTester/ids', QVariant('')).toString())
         self.dock.lineEditSourceId.setText(settings.value('/pgRoutingTester/source_id', QVariant('')).toString())
         self.dock.lineEditSourcePos.setText(settings.value('/pgRoutingTester/source_pos', QVariant('0.5')).toString())
         self.dock.lineEditTargetId.setText(settings.value('/pgRoutingTester/target_id', QVariant('')).toString())
         self.dock.lineEditTargetPos.setText(settings.value('/pgRoutingTester/target_pos', QVariant('0.5')).toString())
+        self.dock.lineEditTargetIds.setText(settings.value('/pgRoutingTester/target_ids', QVariant('')).toString())
         self.dock.lineEditDistance.setText(settings.value('/pgRoutingTester/distance', QVariant('')).toString())
         self.dock.checkBoxDirected.setChecked(settings.value('/pgRoutingTester/directed', QVariant(False)).toBool())
         self.dock.checkBoxHasReverseCost.setChecked(settings.value('/pgRoutingTester/has_reverse_cost', QVariant(False)).toBool())
@@ -795,6 +842,7 @@ class PgRoutingLayer:
         settings.setValue('/pgRoutingTester/source_pos', QVariant(self.dock.lineEditSourcePos.text()))
         settings.setValue('/pgRoutingTester/target_id', QVariant(self.dock.lineEditTargetId.text()))
         settings.setValue('/pgRoutingTester/target_pos', QVariant(self.dock.lineEditTargetPos.text()))
+        settings.setValue('/pgRoutingTester/target_ids', QVariant(self.dock.lineEditTargetIds.text()))
         settings.setValue('/pgRoutingTester/distance', QVariant(self.dock.lineEditDistance.text()))
         settings.setValue('/pgRoutingTester/directed', QVariant(self.dock.checkBoxDirected.isChecked()))
         settings.setValue('/pgRoutingTester/has_reverse_cost', QVariant(self.dock.checkBoxHasReverseCost.isChecked()))
