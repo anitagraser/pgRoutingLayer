@@ -41,7 +41,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM pgr_kdijkstraCost('
+            SELECT seq, id1 AS source, id2 AS target, cost FROM pgr_kdijkstraCost('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,
@@ -61,23 +61,23 @@ class Function(FunctionBase):
         for row in rows:
             cur2 = con.cursor()
             args['result_seq'] = row[0]
-            args['result_id1'] = row[1]
-            args['result_id2'] = row[2]
+            args['result_source_id'] = row[1]
+            args['result_target_id'] = row[2]
             args['result_cost'] = row[3]
             query2 = """
                 SELECT ST_AsText(ST_Transform(%(startpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
-                    WHERE %(source)s = %(result_id2)d
+                    WHERE %(source)s = %(result_target_id)d
                 UNION
                 SELECT ST_AsText(ST_Transform(%(endpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
-                    WHERE %(target)s = %(result_id2)d
+                    WHERE %(target)s = %(result_target_id)d
             """ % args
             cur2.execute(query2)
             row2 = cur2.fetchone()
-            assert row2, "Invalid result geometry. (id2(target id):%(result_id2)d)" % args
+            assert row2, "Invalid result geometry. (target_id:%(result_target_id)d)" % args
             
             geom = QgsGeometry().fromWkt(str(row2[0]))
             pt = geom.asPoint()
-            textDocument = QTextDocument("%(result_id2)d:%(result_cost)f" % args)
+            textDocument = QTextDocument("%(result_target_id)d:%(result_cost)f" % args)
             textAnnotation = QgsTextAnnotationItem(mapCanvas)
             textAnnotation.setMapPosition(geom.asPoint())
             textAnnotation.setFrameSize(QSizeF(textDocument.idealWidth(), 20))

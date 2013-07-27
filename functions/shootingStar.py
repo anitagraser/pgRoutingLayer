@@ -44,7 +44,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM pgr_shootingStar('
+            SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_shootingStar('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,

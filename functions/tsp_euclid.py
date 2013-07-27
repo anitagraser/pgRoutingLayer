@@ -43,7 +43,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM pgr_tsp('
+            SELECT seq, id1 AS internal, id2 AS node, cost FROM pgr_tsp('
                 SELECT DISTINCT id, x, y FROM
                     (SELECT DISTINCT %(source)s AS id, %(x1)s::float8 AS x, %(y1)s::float8 AS y FROM %(edge_table)s
                     UNION
@@ -63,23 +63,23 @@ class Function(FunctionBase):
         for row in rows:
             cur2 = con.cursor()
             args['result_seq'] = row[0]
-            args['result_id1'] = row[1]
-            args['result_id2'] = row[2]
+            args['result_internal_id'] = row[1]
+            args['result_node_id'] = row[2]
             args['result_cost'] = row[3]
             query2 = """
                 SELECT ST_AsText(ST_Transform(%(startpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
-                    WHERE %(source)s = %(result_id2)d
+                    WHERE %(source)s = %(result_node_id)d
                 UNION
                 SELECT ST_AsText(ST_Transform(%(endpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
-                    WHERE %(target)s = %(result_id2)d
+                    WHERE %(target)s = %(result_node_id)d
             """ % args
             cur2.execute(query2)
             row2 = cur2.fetchone()
-            assert row2, "Invalid result geometry. (id2(node id):%(result_id2)d)" % args
+            assert row2, "Invalid result geometry. (node_id:%(result_node_id)d)" % args
             
             geom = QgsGeometry().fromWkt(str(row2[0]))
             pt = geom.asPoint()
-            textDocument = QTextDocument("%(result_seq)d:%(result_id2)d" % args)
+            textDocument = QTextDocument("%(result_seq)d:%(result_node_id)d" % args)
             textAnnotation = QgsTextAnnotationItem(mapCanvas)
             textAnnotation.setMapPosition(geom.asPoint())
             textAnnotation.setFrameSize(QSizeF(textDocument.idealWidth(), 20))

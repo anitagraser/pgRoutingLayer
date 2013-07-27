@@ -42,7 +42,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM pgr_ksp('
+            SELECT seq, id1 AS route, id2 AS node, id3 AS edge, cost FROM pgr_ksp('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,
@@ -83,7 +83,7 @@ class Function(FunctionBase):
                 cur2.execute(query2)
                 row2 = cur2.fetchone()
                 ##QMessageBox.information(self.ui, self.ui.windowTitle(), str(row2[0]))
-                assert row2, "Invalid result geometry. (vertex_id:%(result_node_id)d, edge_id:%(result_edge_id)d)" % args
+                assert row2, "Invalid result geometry. (route_id:%(result_route_id)d, node_id:%(result_node_id)d, edge_id:%(result_edge_id)d)" % args
                 
                 geom = QgsGeometry().fromWkt(str(row2[0]))
                 if geom.wkbType() == QGis.WKBMultiLineString:

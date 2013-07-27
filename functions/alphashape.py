@@ -62,7 +62,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM pgr_alphashape('
+            SELECT x, y FROM pgr_alphashape('
                 SELECT *
                     FROM node
                     JOIN

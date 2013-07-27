@@ -39,7 +39,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM pgr_trsp('
+            SELECT seq, id1 AS node, id2 AS edge, cost FROM pgr_trsp('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,
@@ -51,22 +51,22 @@ class Function(FunctionBase):
         resultPathRubberBand = canvasItemList['path']
         for row in rows:
             cur2 = con.cursor()
-            args['result_vertex_id'] = row[1]
+            args['result_node_id'] = row[1]
             args['result_edge_id'] = row[2]
             args['result_cost'] = row[3]
             if args['result_edge_id'] != -1:
                 query2 = """
                     SELECT ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d)) FROM %(edge_table)s
-                        WHERE %(source)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d
+                        WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
                     UNION
                     SELECT ST_AsText(ST_Transform(ST_Reverse(%(geometry)s), %(canvas_srid)d)) FROM %(edge_table)s
-                        WHERE %(target)s = %(result_vertex_id)d AND %(id)s = %(result_edge_id)d;
+                        WHERE %(target)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d;
                 """ % args
                 ##QMessageBox.information(self.ui, self.ui.windowTitle(), query2)
                 cur2.execute(query2)
                 row2 = cur2.fetchone()
                 ##QMessageBox.information(self.ui, self.ui.windowTitle(), str(row2[0]))
-                assert row2, "Invalid result geometry. (vertex_id:%(result_vertex_id)d, edge_id:%(result_edge_id)d)" % args
+                assert row2, "Invalid result geometry. (node_id:%(result_node_id)d, edge_id:%(result_edge_id)d)" % args
                 
                 geom = QgsGeometry().fromWkt(str(row2[0]))
                 if geom.wkbType() == QGis.WKBMultiLineString:

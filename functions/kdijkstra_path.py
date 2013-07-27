@@ -41,7 +41,7 @@ class Function(FunctionBase):
     
     def getQuery(self, args):
         return """
-            SELECT * FROM pgr_kdijkstraPath('
+            SELECT seq, id1 AS path, id2 AS node, id3 AS edge, cost FROM pgr_kdijkstraPath('
                 SELECT %(id)s AS id,
                     %(source)s::int4 AS source,
                     %(target)s::int4 AS target,
@@ -52,15 +52,15 @@ class Function(FunctionBase):
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultPathsRubberBands = canvasItemList['paths']
         rubberBand = None
-        cur_target_id = -1
+        cur_path_id = -1
         for row in rows:
             cur2 = con.cursor()
-            args['result_target_id'] = row[1]
-            args['result_edge_target_node_id'] = row[2]
+            args['result_path_id'] = row[1]
+            args['result_node_id'] = row[2]
             args['result_edge_id'] = row[3]
             args['result_cost'] = row[4]
-            if args['result_target_id'] <> cur_target_id:
-                cur_target_id = args['result_target_id']
+            if args['result_path_id'] <> cur_path_id:
+                cur_path_id = args['result_path_id']
                 if rubberBand:
                     resultPathsRubberBands.append(rubberBand)
                     rubberBand = None
@@ -72,23 +72,23 @@ class Function(FunctionBase):
             if args['result_edge_id'] != -1:
                 #query2 = """
                 #    SELECT ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d)) FROM %(edge_table)s
-                #        WHERE %(source)s = %(result_edge_target_node_id)d AND %(id)s = %(result_edge_id)d
+                #        WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
                 #    UNION
                 #    SELECT ST_AsText(ST_Transform(ST_Reverse(%(geometry)s), %(canvas_srid)d)) FROM %(edge_table)s
-                #        WHERE %(target)s = %(result_edge_target_node_id)d AND %(id)s = %(result_edge_id)d;
+                #        WHERE %(target)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d;
                 #""" % args
                 query2 = """
                     SELECT ST_AsText(ST_Transform(ST_Reverse(%(geometry)s), %(canvas_srid)d)) FROM %(edge_table)s
-                        WHERE %(source)s = %(result_edge_target_node_id)d AND %(id)s = %(result_edge_id)d
+                        WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
                     UNION
                     SELECT ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d)) FROM %(edge_table)s
-                        WHERE %(target)s = %(result_edge_target_node_id)d AND %(id)s = %(result_edge_id)d;
+                        WHERE %(target)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d;
                 """ % args
                 ##QMessageBox.information(self.ui, self.ui.windowTitle(), query2)
                 cur2.execute(query2)
                 row2 = cur2.fetchone()
                 ##QMessageBox.information(self.ui, self.ui.windowTitle(), str(row2[0]))
-                assert row2, "Invalid result geometry. (vertex_id:%(result_edge_target_node_id)d, edge_id:%(result_edge_id)d)" % args
+                assert row2, "Invalid result geometry. (path_id:%(result_path_id)d, node_id:%(result_node_id)d, edge_id:%(result_edge_id)d)" % args
                 
                 geom = QgsGeometry().fromWkt(str(row2[0]))
                 if geom.wkbType() == QGis.WKBMultiLineString:

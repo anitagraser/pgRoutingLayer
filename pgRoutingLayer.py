@@ -430,15 +430,18 @@ class PgRoutingLayer:
         
         query = """
             SELECT %(edge_table)s.*,
-                route.cost AS route_cost,
-                route.id1 AS route_vertex_id
+                result.seq AS result_seq,
+                result.node AS result_node,
+                result.cost AS result_cost
                 FROM %(edge_table)s
                 JOIN
-                (%(path_query)s) AS route
-                ON %(edge_table)s.%(id)s = route.id2""" % args
+                (%(path_query)s) AS result
+                ON %(edge_table)s.%(id)s = result.edge""" % args
         
         query = query.replace('\n', ' ')
         query = re.sub(r'\s+', ' ', query)
+        query = query.replace('( ', '(')
+        query = query.replace(' )', ')')
         query = query.strip()
         ##QMessageBox.information(self.dock, self.dock.windowTitle(), query)
         
@@ -447,10 +450,15 @@ class PgRoutingLayer:
             db = self.actionsDb[dados].connect()
             
             uri = db.getURI()
-            uri.setDataSource("", "(" + query + ")", args['geometry'], "", args['id'])
+            uri.setDataSource("", "(" + query + ")", args['geometry'], "", "result_seq")
             
             # add vector layer to map
-            layerName = "from "+args['source_id']+" to "+args['target_id']
+            layerName = function.getName() + " - from " + args['source_id'] + " to "
+            if 'target_id' in args:
+                layerName += args['target_id']
+            else:
+                layerName += "many"
+            
             vl = self.iface.addVectorLayer(uri.uri(), layerName, db.getProviderName())
             
         except psycopg2.DatabaseError, e:
