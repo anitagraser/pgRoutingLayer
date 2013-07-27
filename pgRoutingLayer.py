@@ -38,15 +38,17 @@ class PgRoutingLayer:
     SUPPORTED_FUNCTIONS = [
         'dijkstra',
         'astar',
-        'shootingStar',
+        #'shootingStar',
         'drivingDistance',
         'alphashape',
         'tsp_euclid',
         'trsp_vertex',
         'trsp_edge',
         'kdijkstra_cost',
+        'kdijkstra_path',
         'bdDijkstra',
-        'bdAstar'
+        'bdAstar',
+        'ksp'
     ]
     TOGGLE_CONTROL_NAMES = [
         'labelId', 'lineEditId',
@@ -67,6 +69,7 @@ class PgRoutingLayer:
         'labelTargetIds', 'lineEditTargetIds', 'buttonSelectTargetIds',
         'labelTargetPos', 'lineEditTargetPos',
         'labelDistance', 'lineEditDistance',
+        'labelPaths', 'lineEditPaths',
         'checkBoxDirected', 'checkBoxHasReverseCost',
         'labelTurnRestrictSql', 'plainTextEditTurnRestrictSql',
     ]
@@ -137,7 +140,9 @@ class PgRoutingLayer:
         self.dock.lineEditSourcePos.setValidator(QDoubleValidator(0.0, 1.0, 10, self.dock))
         self.dock.lineEditTargetId.setValidator(QIntValidator())
         self.dock.lineEditTargetPos.setValidator(QDoubleValidator(0.0, 1.0, 10, self.dock))
+        self.dock.lineEditTargetIds.setValidator(QRegExpValidator(QRegExp("[0-9,]+"), self.dock))
         self.dock.lineEditDistance.setValidator(QDoubleValidator())
+        self.dock.lineEditPaths.setValidator(QIntValidator())
         
         self.idsVertexMarkers = []
         self.targetIdsVertexMarkers = []
@@ -159,6 +164,7 @@ class PgRoutingLayer:
         self.canvasItemList = {}
         self.canvasItemList['markers'] = []
         self.canvasItemList['annotations'] = []
+        self.canvasItemList['paths'] = []
         resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
         resultPathRubberBand.setColor(Qt.red)
         resultPathRubberBand.setWidth(2)
@@ -485,6 +491,9 @@ class PgRoutingLayer:
         for anno in self.canvasItemList['annotations']:
             anno.setVisible(False)
         self.canvasItemList['annotations'] = []
+        for path in self.canvasItemList['paths']:
+            path.reset(False)
+        self.canvasItemList['paths'] = []
         self.canvasItemList['path'].reset(False)
         self.canvasItemList['area'].reset(True)
         
@@ -555,6 +564,9 @@ class PgRoutingLayer:
         
         if 'lineEditDistance' in controls:
             args['distance'] = self.dock.lineEditDistance.text()
+        
+        if 'lineEditPaths' in controls:
+            args['paths'] = self.dock.lineEditPaths.text()
         
         if 'checkBoxDirected' in controls:
             args['directed'] = str(self.dock.checkBoxDirected.isChecked()).lower()
@@ -814,6 +826,7 @@ class PgRoutingLayer:
         self.dock.lineEditTargetPos.setText(settings.value('/pgRoutingTester/target_pos', QVariant('0.5')).toString())
         self.dock.lineEditTargetIds.setText(settings.value('/pgRoutingTester/target_ids', QVariant('')).toString())
         self.dock.lineEditDistance.setText(settings.value('/pgRoutingTester/distance', QVariant('')).toString())
+        self.dock.lineEditPaths.setText(settings.value('/pgRoutingTester/paths', QVariant('2')).toString())
         self.dock.checkBoxDirected.setChecked(settings.value('/pgRoutingTester/directed', QVariant(False)).toBool())
         self.dock.checkBoxHasReverseCost.setChecked(settings.value('/pgRoutingTester/has_reverse_cost', QVariant(False)).toBool())
         self.dock.plainTextEditTurnRestrictSql.setPlainText(settings.value('/pgRoutingTester/turn_restrict_sql', QVariant('null')).toString())
@@ -844,6 +857,7 @@ class PgRoutingLayer:
         settings.setValue('/pgRoutingTester/target_pos', QVariant(self.dock.lineEditTargetPos.text()))
         settings.setValue('/pgRoutingTester/target_ids', QVariant(self.dock.lineEditTargetIds.text()))
         settings.setValue('/pgRoutingTester/distance', QVariant(self.dock.lineEditDistance.text()))
+        settings.setValue('/pgRoutingTester/paths', QVariant(self.dock.lineEditPaths.text()))
         settings.setValue('/pgRoutingTester/directed', QVariant(self.dock.checkBoxDirected.isChecked()))
         settings.setValue('/pgRoutingTester/has_reverse_cost', QVariant(self.dock.checkBoxHasReverseCost.isChecked()))
         settings.setValue('/pgRoutingTester/turn_restrict_sql', QVariant(self.dock.plainTextEditTurnRestrictSql.toPlainText()))

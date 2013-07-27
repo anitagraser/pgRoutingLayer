@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>230</width>
-    <height>503</height>
+    <height>526</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -541,7 +541,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="9" column="0">
        <widget class="QLabel" name="labelTurnRestrictSql">
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
@@ -553,7 +553,7 @@ _sql</string>
         </property>
        </widget>
       </item>
-      <item row="7" column="0" colspan="3">
+      <item row="8" column="0" colspan="3">
        <layout class="QHBoxLayout" name="horizontalLayoutOption2">
         <property name="spacing">
          <number>3</number>
@@ -601,7 +601,7 @@ _sql</string>
         </item>
        </layout>
       </item>
-      <item row="8" column="1" colspan="2">
+      <item row="9" column="1" colspan="2">
        <widget class="QPlainTextEdit" name="plainTextEditTurnRestrictSql">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
@@ -672,6 +672,16 @@ _sql</string>
          <locale language="English" country="UnitedStates"/>
         </property>
        </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="labelPaths">
+        <property name="text">
+         <string>paths</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QLineEdit" name="lineEditPaths"/>
       </item>
      </layout>
     </item>
@@ -804,6 +814,7 @@ _sql</string>
   <tabstop>lineEditTargetIds</tabstop>
   <tabstop>buttonSelectTargetIds</tabstop>
   <tabstop>lineEditDistance</tabstop>
+  <tabstop>lineEditPaths</tabstop>
   <tabstop>checkBoxDirected</tabstop>
   <tabstop>checkBoxHasReverseCost</tabstop>
   <tabstop>plainTextEditTurnRestrictSql</tabstop>
