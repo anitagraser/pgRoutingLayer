@@ -63,29 +63,29 @@ class Function(FunctionBase):
             if i == 0 and args['result_node_id'] == -1:
                 args['result_next_node_id'] = rows[i + 1][1]
                 query2 = """
-                    SELECT ST_AsText(ST_Transform(ST_Line_Substring(%(geometry)s, %(source_pos)s, 1.0), %(canvas_srid)d)) FROM %(edge_table)s
+                    SELECT ST_AsText(%(transform_s)sST_Line_Substring(%(geometry)s, %(source_pos)s, 1.0)%(transform_e)s) FROM %(edge_table)s
                         WHERE %(target)s = %(result_next_node_id)s AND %(id)s = %(result_edge_id)s
                     UNION
-                    SELECT ST_AsText(ST_Transform(ST_Line_Substring(ST_Reverse(%(geometry)s), %(source_pos)s, 1.0), %(canvas_srid)d)) FROM %(edge_table)s
+                    SELECT ST_AsText(%(transform_s)sST_Line_Substring(ST_Reverse(%(geometry)s), %(source_pos)s, 1.0)%(transform_e)s) FROM %(edge_table)s
                         WHERE %(source)s = %(result_next_node_id)s AND %(id)s = %(result_edge_id)s;
                 """ % args
             elif i == (count - 1):
                 if args['result_edge_id'] != -1:
                     query2 = """
-                        SELECT ST_AsText(ST_Transform(ST_Line_Substring(%(geometry)s, 0.0, 1.0 - %(target_pos)s), %(canvas_srid)d)) FROM %(edge_table)s
+                        SELECT ST_AsText(%(transform_s)sST_Line_Substring(%(geometry)s, 0.0, 1.0 - %(target_pos)s)%(transform_e)s) FROM %(edge_table)s
                             WHERE %(source)s = %(result_node_id)s AND %(id)s = %(result_edge_id)s
                         UNION
-                        SELECT ST_AsText(ST_Transform(ST_Line_Substring(ST_Reverse(%(geometry)s), 0.0, 1.0 - %(target_pos)s), %(canvas_srid)d)) FROM %(edge_table)s
+                        SELECT ST_AsText(%(transform_s)sST_Line_Substring(ST_Reverse(%(geometry)s), 0.0, 1.0 - %(target_pos)s)%(transform_e)s) FROM %(edge_table)s
                             WHERE %(target)s = %(result_node_id)s AND %(id)s = %(result_edge_id)s;
                     """ % args
                 else:
                     break
             else:
                 query2 = """
-                    SELECT ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d)) FROM %(edge_table)s
+                    SELECT ST_AsText(%(transform_s)s%(geometry)s%(transform_e)s) FROM %(edge_table)s
                         WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
                     UNION
-                    SELECT ST_AsText(ST_Transform(ST_Reverse(%(geometry)s), %(canvas_srid)d)) FROM %(edge_table)s
+                    SELECT ST_AsText(%(transform_s)sST_Reverse(%(geometry)s)%(transform_e)s) FROM %(edge_table)s
                         WHERE %(target)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d;
                 """ % args
             

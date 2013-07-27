@@ -26,6 +26,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
 import dbConnection
+import pgRoutingLayer_utils as Utils
 #import highlighter as hl
 import os
 import psycopg2
@@ -384,6 +385,7 @@ class PgRoutingLayer:
             
             args['srid'] = srid
             args['canvas_srid'] = self.iface.mapCanvas().mapRenderer().destinationSrs().epsg()
+            Utils.setTransformQuotes(args)
             function.draw(rows, con, args, geomType, self.canvasItemList, self.iface.mapCanvas())
             
         except psycopg2.DatabaseError, e:
@@ -648,12 +650,9 @@ class PgRoutingLayer:
             args['maxx'] = rect.xMaximum()
             args['maxy'] = rect.yMaximum()
             
-            if geomType == 'ST_MultiLineString':
-                args['startpoint'] = "ST_StartPoint(ST_GeometryN(%(geometry)s, 1))" % args
-                args['endpoint'] = "ST_EndPoint(ST_GeometryN(%(geometry)s, 1))" % args
-            elif geomType == 'ST_LineString':
-                args['startpoint'] = "ST_StartPoint(%(geometry)s)" % args
-                args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
+            Utils.setStartPoint(geomType, args)
+            Utils.setEndPoint(geomType, args)
+            Utils.setTransformQuotes(args)
             
             # Getting nearest source
             query1 = """
@@ -662,7 +661,7 @@ class PgRoutingLayer:
                     %(startpoint)s,
                     ST_GeomFromText('POINT(%(x)f %(y)f)', %(srid)d)
                 ) AS dist,
-                ST_AsText(ST_Transform(%(startpoint)s, %(canvas_srid)d))
+                ST_AsText(%(transform_s)s%(startpoint)s%(transform_e)s)
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
@@ -686,7 +685,7 @@ class PgRoutingLayer:
                     %(endpoint)s,
                     ST_GeomFromText('POINT(%(x)f %(y)f)', %(srid)d)
                 ) AS dist,
-                ST_AsText(ST_Transform(%(endpoint)s, %(canvas_srid)d))
+                ST_AsText(%(transform_s)s%(endpoint)s%(transform_e)s)
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
@@ -770,6 +769,8 @@ class PgRoutingLayer:
             args['maxx'] = rect.xMaximum()
             args['maxy'] = rect.yMaximum()
             
+            Utils.setTransformQuotes(args)
+            
             # Searching for a link within the distance
             query = """
             SELECT %(id)s,
@@ -777,12 +778,12 @@ class PgRoutingLayer:
                     %(geometry)s,
                     ST_GeomFromText('POINT(%(x)f %(y)f)', %(srid)d)
                 ) AS dist,
-                ST_AsText(ST_Transform(%(geometry)s, %(canvas_srid)d))
+                ST_AsText(%(transform_s)s%(geometry)s%(transform_e)s)
                 FROM %(edge_table)s
                 WHERE ST_SetSRID('BOX3D(%(minx)f %(miny)f, %(maxx)f %(maxy)f)'::BOX3D, %(srid)d)
                     && %(geometry)s ORDER BY dist ASC LIMIT 1""" % args
             
-            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query1)
+            ##QMessageBox.information(self.dock, self.dock.windowTitle(), query)
             cur = con.cursor()
             cur.execute(query)
             row = cur.fetchone()

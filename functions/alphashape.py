@@ -3,6 +3,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
 import psycopg2
+from pgRoutingLayer import pgRoutingLayer_utils as Utils
 from FunctionBase import FunctionBase
 
 class Function(FunctionBase):
@@ -50,13 +51,9 @@ class Function(FunctionBase):
                         %(endpoint)s AS %(geometry)s
                         FROM %(edge_table)s
                 ) AS node;"""
-        if geomType == 'ST_MultiLineString':
-            args['startpoint'] = "ST_StartPoint(ST_GeometryN(%(geometry)s, 1))" % args
-            args['endpoint'] = "ST_EndPoint(ST_GeometryN(%(geometry)s, 1))" % args
-        elif geomType == 'ST_LineString':
-            args['startpoint'] = "ST_StartPoint(%(geometry)s)" % args
-            args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
-            
+        Utils.setStartPoint(geomType, args)
+        Utils.setEndPoint(geomType, args)
+        
         cur = con.cursor()
         cur.execute(query % args)
     

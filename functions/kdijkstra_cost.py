@@ -3,6 +3,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
 import psycopg2
+from pgRoutingLayer import pgRoutingLayer_utils as Utils
 from FunctionBase import FunctionBase
 
 class Function(FunctionBase):
@@ -51,13 +52,8 @@ class Function(FunctionBase):
     
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultNodesTextAnnotations = canvasItemList['annotations']
-        if geomType == 'ST_MultiLineString':
-            args['startpoint'] = "ST_StartPoint(ST_GeometryN(%(geometry)s, 1))" % args
-            args['endpoint'] = "ST_EndPoint(ST_GeometryN(%(geometry)s, 1))" % args
-        elif geomType == 'ST_LineString':
-            args['startpoint'] = "ST_StartPoint(%(geometry)s)" % args
-            args['endpoint'] = "ST_EndPoint(%(geometry)s)" % args
-        # return columns are 'seq', 'id1(source id)', 'id2(target id)', 'cost'
+        Utils.setStartPoint(geomType, args)
+        Utils.setEndPoint(geomType, args)
         for row in rows:
             cur2 = con.cursor()
             args['result_seq'] = row[0]
@@ -65,10 +61,10 @@ class Function(FunctionBase):
             args['result_target_id'] = row[2]
             args['result_cost'] = row[3]
             query2 = """
-                SELECT ST_AsText(ST_Transform(%(startpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
+                SELECT ST_AsText(%(transform_s)s%(startpoint)s%(transform_e)s) FROM %(edge_table)s
                     WHERE %(source)s = %(result_target_id)d
                 UNION
-                SELECT ST_AsText(ST_Transform(%(endpoint)s, %(canvas_srid)d)) FROM %(edge_table)s
+                SELECT ST_AsText(%(transform_s)s%(endpoint)s%(transform_e)s) FROM %(edge_table)s
                     WHERE %(target)s = %(result_target_id)d
             """ % args
             cur2.execute(query2)
