@@ -66,8 +66,8 @@ class Function(FunctionBase):
                     rubberBand = None
                 
                 rubberBand = QgsRubberBand(mapCanvas, False)
-                rubberBand.setColor(Qt.red)
-                rubberBand.setWidth(2)
+                rubberBand.setColor(QColor(255, 0, 0, 128))
+                rubberBand.setWidth(4)
             
             if args['result_edge_id'] != -1:
                 #query2 = """

@@ -166,8 +166,8 @@ class PgRoutingLayer:
         self.canvasItemList['annotations'] = []
         self.canvasItemList['paths'] = []
         resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
-        resultPathRubberBand.setColor(Qt.red)
-        resultPathRubberBand.setWidth(2)
+        resultPathRubberBand.setColor(QColor(255, 0, 0, 128))
+        resultPathRubberBand.setWidth(4)
         self.canvasItemList['path'] = resultPathRubberBand
         resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
         resultAreaRubberBand.setColor(Qt.magenta)
