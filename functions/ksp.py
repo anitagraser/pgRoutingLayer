@@ -60,7 +60,7 @@ class Function(FunctionBase):
             args['result_node_id'] = row[2]
             args['result_edge_id'] = row[3]
             args['result_cost'] = row[4]
-            if args['result_route_id'] <> cur_route_id:
+            if args['result_route_id'] != cur_route_id:
                 cur_route_id = args['result_route_id']
                 if rubberBand:
                     resultPathsRubberBands.append(rubberBand)

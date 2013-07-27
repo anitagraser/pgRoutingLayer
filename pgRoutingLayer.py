@@ -79,6 +79,36 @@ class PgRoutingLayer:
         # Save reference to the QGIS interface
         self.iface = iface
         
+        self.idsVertexMarkers = []
+        self.targetIdsVertexMarkers = []
+        self.sourceIdVertexMarker = QgsVertexMarker(self.iface.mapCanvas())
+        self.sourceIdVertexMarker.setColor(Qt.blue)
+        self.sourceIdVertexMarker.setPenWidth(2)
+        self.sourceIdVertexMarker.setVisible(False)
+        self.targetIdVertexMarker = QgsVertexMarker(self.iface.mapCanvas())
+        self.targetIdVertexMarker.setColor(Qt.green)
+        self.targetIdVertexMarker.setPenWidth(2)
+        self.targetIdVertexMarker.setVisible(False)
+        self.sourceIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
+        self.sourceIdRubberBand.setColor(Qt.cyan)
+        self.sourceIdRubberBand.setWidth(4)
+        self.targetIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
+        self.targetIdRubberBand.setColor(Qt.yellow)
+        self.targetIdRubberBand.setWidth(4)
+        
+        self.canvasItemList = {}
+        self.canvasItemList['markers'] = []
+        self.canvasItemList['annotations'] = []
+        self.canvasItemList['paths'] = []
+        resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
+        resultPathRubberBand.setColor(QColor(255, 0, 0, 128))
+        resultPathRubberBand.setWidth(4)
+        self.canvasItemList['path'] = resultPathRubberBand
+        resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
+        resultAreaRubberBand.setColor(Qt.magenta)
+        resultAreaRubberBand.setWidth(2)
+        self.canvasItemList['area'] = resultAreaRubberBand
+        
     def initGui(self):
         # Create action that will start plugin configuration
         self.action = QAction(QIcon(":/plugins/pgRoutingLayer/icon.png"), "pgRouting Layer", self.iface.mainWindow())
@@ -133,8 +163,6 @@ class PgRoutingLayer:
             self.functions[funcname] = function.Function(self.dock)
             self.dock.comboBoxFunction.addItem(funcname)
         
-        self.loadSettings()
-        
         self.dock.lineEditIds.setValidator(QRegExpValidator(QRegExp("[0-9,]+"), self.dock))
         self.dock.lineEditSourceId.setValidator(QIntValidator())
         self.dock.lineEditSourcePos.setValidator(QDoubleValidator(0.0, 1.0, 10, self.dock))
@@ -144,37 +172,7 @@ class PgRoutingLayer:
         self.dock.lineEditDistance.setValidator(QDoubleValidator())
         self.dock.lineEditPaths.setValidator(QIntValidator())
         
-        self.idsVertexMarkers = []
-        self.targetIdsVertexMarkers = []
-        self.sourceIdVertexMarker = QgsVertexMarker(self.iface.mapCanvas())
-        self.sourceIdVertexMarker.setColor(Qt.blue)
-        self.sourceIdVertexMarker.setPenWidth(2)
-        self.sourceIdVertexMarker.setVisible(False)
-        self.targetIdVertexMarker = QgsVertexMarker(self.iface.mapCanvas())
-        self.targetIdVertexMarker.setColor(Qt.green)
-        self.targetIdVertexMarker.setPenWidth(2)
-        self.targetIdVertexMarker.setVisible(False)
-        self.sourceIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
-        self.sourceIdRubberBand.setColor(Qt.cyan)
-        self.sourceIdRubberBand.setWidth(4)
-        self.targetIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
-        self.targetIdRubberBand.setColor(Qt.yellow)
-        self.targetIdRubberBand.setWidth(4)
-        
-        self.canvasItemList = {}
-        self.canvasItemList['markers'] = []
-        self.canvasItemList['annotations'] = []
-        self.canvasItemList['paths'] = []
-        resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
-        resultPathRubberBand.setColor(QColor(255, 0, 0, 128))
-        resultPathRubberBand.setWidth(4)
-        self.canvasItemList['path'] = resultPathRubberBand
-        resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
-        resultAreaRubberBand.setColor(Qt.magenta)
-        resultAreaRubberBand.setWidth(2)
-        self.canvasItemList['area'] = resultAreaRubberBand
-        
-        self.dock.comboBoxFunction.setCurrentIndex(0)
+        self.loadSettings()
         
     def show(self):
         self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
@@ -806,66 +804,66 @@ class PgRoutingLayer:
     
     def loadSettings(self):
         settings = QSettings()
-        idx = self.dock.comboConnections.findText(settings.value('/pgRoutingTester/Database', QVariant('')).toString())
+        idx = self.dock.comboConnections.findText(settings.value('/pgRoutingLayer/Database', QVariant('')).toString())
         if idx >= 0:
             self.dock.comboConnections.setCurrentIndex(idx)
-        idx = self.dock.comboBoxFunction.findText(settings.value('/pgRoutingTester/Function', QVariant('dijkstra')).toString())
+        idx = self.dock.comboBoxFunction.findText(settings.value('/pgRoutingLayer/Function', QVariant('dijkstra')).toString())
         if idx >= 0:
             self.dock.comboBoxFunction.setCurrentIndex(idx)
         
-        self.dock.lineEditTable.setText(settings.value('/pgRoutingTester/sql/edge_table', QVariant('roads')).toString())
-        self.dock.lineEditGeometry.setText(settings.value('/pgRoutingTester/sql/geometry', QVariant('the_geom')).toString())
-        self.dock.lineEditId.setText(settings.value('/pgRoutingTester/sql/id', QVariant('id')).toString())
-        self.dock.lineEditSource.setText(settings.value('/pgRoutingTester/sql/source', QVariant('source')).toString())
-        self.dock.lineEditTarget.setText(settings.value('/pgRoutingTester/sql/target', QVariant('target')).toString())
-        self.dock.lineEditCost.setText(settings.value('/pgRoutingTester/sql/cost', QVariant('cost')).toString())
-        self.dock.lineEditReverseCost.setText(settings.value('/pgRoutingTester/sql/reverse_cost', QVariant('reverse_cost')).toString())
-        self.dock.lineEditX1.setText(settings.value('/pgRoutingTester/sql/x1', QVariant('x1')).toString())
-        self.dock.lineEditY1.setText(settings.value('/pgRoutingTester/sql/y1', QVariant('y1')).toString())
-        self.dock.lineEditX2.setText(settings.value('/pgRoutingTester/sql/x2', QVariant('x2')).toString())
-        self.dock.lineEditY2.setText(settings.value('/pgRoutingTester/sql/y2', QVariant('y2')).toString())
-        self.dock.lineEditRule.setText(settings.value('/pgRoutingTester/sql/rule', QVariant('rule')).toString())
-        self.dock.lineEditToCost.setText(settings.value('/pgRoutingTester/sql/to_cost', QVariant('to_cost')).toString())
+        self.dock.lineEditTable.setText(settings.value('/pgRoutingLayer/sql/edge_table', QVariant('roads')).toString())
+        self.dock.lineEditGeometry.setText(settings.value('/pgRoutingLayer/sql/geometry', QVariant('the_geom')).toString())
+        self.dock.lineEditId.setText(settings.value('/pgRoutingLayer/sql/id', QVariant('id')).toString())
+        self.dock.lineEditSource.setText(settings.value('/pgRoutingLayer/sql/source', QVariant('source')).toString())
+        self.dock.lineEditTarget.setText(settings.value('/pgRoutingLayer/sql/target', QVariant('target')).toString())
+        self.dock.lineEditCost.setText(settings.value('/pgRoutingLayer/sql/cost', QVariant('cost')).toString())
+        self.dock.lineEditReverseCost.setText(settings.value('/pgRoutingLayer/sql/reverse_cost', QVariant('reverse_cost')).toString())
+        self.dock.lineEditX1.setText(settings.value('/pgRoutingLayer/sql/x1', QVariant('x1')).toString())
+        self.dock.lineEditY1.setText(settings.value('/pgRoutingLayer/sql/y1', QVariant('y1')).toString())
+        self.dock.lineEditX2.setText(settings.value('/pgRoutingLayer/sql/x2', QVariant('x2')).toString())
+        self.dock.lineEditY2.setText(settings.value('/pgRoutingLayer/sql/y2', QVariant('y2')).toString())
+        self.dock.lineEditRule.setText(settings.value('/pgRoutingLayer/sql/rule', QVariant('rule')).toString())
+        self.dock.lineEditToCost.setText(settings.value('/pgRoutingLayer/sql/to_cost', QVariant('to_cost')).toString())
         
-        self.dock.lineEditIds.setText(settings.value('/pgRoutingTester/ids', QVariant('')).toString())
-        self.dock.lineEditSourceId.setText(settings.value('/pgRoutingTester/source_id', QVariant('')).toString())
-        self.dock.lineEditSourcePos.setText(settings.value('/pgRoutingTester/source_pos', QVariant('0.5')).toString())
-        self.dock.lineEditTargetId.setText(settings.value('/pgRoutingTester/target_id', QVariant('')).toString())
-        self.dock.lineEditTargetPos.setText(settings.value('/pgRoutingTester/target_pos', QVariant('0.5')).toString())
-        self.dock.lineEditTargetIds.setText(settings.value('/pgRoutingTester/target_ids', QVariant('')).toString())
-        self.dock.lineEditDistance.setText(settings.value('/pgRoutingTester/distance', QVariant('')).toString())
-        self.dock.lineEditPaths.setText(settings.value('/pgRoutingTester/paths', QVariant('2')).toString())
-        self.dock.checkBoxDirected.setChecked(settings.value('/pgRoutingTester/directed', QVariant(False)).toBool())
-        self.dock.checkBoxHasReverseCost.setChecked(settings.value('/pgRoutingTester/has_reverse_cost', QVariant(False)).toBool())
-        self.dock.plainTextEditTurnRestrictSql.setPlainText(settings.value('/pgRoutingTester/turn_restrict_sql', QVariant('null')).toString())
+        self.dock.lineEditIds.setText(settings.value('/pgRoutingLayer/ids', QVariant('')).toString())
+        self.dock.lineEditSourceId.setText(settings.value('/pgRoutingLayer/source_id', QVariant('')).toString())
+        self.dock.lineEditSourcePos.setText(settings.value('/pgRoutingLayer/source_pos', QVariant('0.5')).toString())
+        self.dock.lineEditTargetId.setText(settings.value('/pgRoutingLayer/target_id', QVariant('')).toString())
+        self.dock.lineEditTargetPos.setText(settings.value('/pgRoutingLayer/target_pos', QVariant('0.5')).toString())
+        self.dock.lineEditTargetIds.setText(settings.value('/pgRoutingLayer/target_ids', QVariant('')).toString())
+        self.dock.lineEditDistance.setText(settings.value('/pgRoutingLayer/distance', QVariant('')).toString())
+        self.dock.lineEditPaths.setText(settings.value('/pgRoutingLayer/paths', QVariant('2')).toString())
+        self.dock.checkBoxDirected.setChecked(settings.value('/pgRoutingLayer/directed', QVariant(False)).toBool())
+        self.dock.checkBoxHasReverseCost.setChecked(settings.value('/pgRoutingLayer/has_reverse_cost', QVariant(False)).toBool())
+        self.dock.plainTextEditTurnRestrictSql.setPlainText(settings.value('/pgRoutingLayer/turn_restrict_sql', QVariant('null')).toString())
         
     def saveSettings(self):
         settings = QSettings()
-        settings.setValue('/pgRoutingTester/Database', QVariant(self.dock.comboConnections.currentText()))
-        settings.setValue('/pgRoutingTester/Function', QVariant(self.dock.comboBoxFunction.currentText()))
+        settings.setValue('/pgRoutingLayer/Database', QVariant(self.dock.comboConnections.currentText()))
+        settings.setValue('/pgRoutingLayer/Function', QVariant(self.dock.comboBoxFunction.currentText()))
         
-        settings.setValue('/pgRoutingTester/sql/edge_table', QVariant(self.dock.lineEditTable.text()))
-        settings.setValue('/pgRoutingTester/sql/geometry', QVariant(self.dock.lineEditGeometry.text()))
-        settings.setValue('/pgRoutingTester/sql/id', QVariant(self.dock.lineEditId.text()))
-        settings.setValue('/pgRoutingTester/sql/source', QVariant(self.dock.lineEditSource.text()))
-        settings.setValue('/pgRoutingTester/sql/target', QVariant(self.dock.lineEditTarget.text()))
-        settings.setValue('/pgRoutingTester/sql/cost', QVariant(self.dock.lineEditCost.text()))
-        settings.setValue('/pgRoutingTester/sql/reverse_cost', QVariant(self.dock.lineEditReverseCost.text()))
-        settings.setValue('/pgRoutingTester/sql/x1', QVariant(self.dock.lineEditX1.text()))
-        settings.setValue('/pgRoutingTester/sql/y1', QVariant(self.dock.lineEditY1.text()))
-        settings.setValue('/pgRoutingTester/sql/x2', QVariant(self.dock.lineEditX2.text()))
-        settings.setValue('/pgRoutingTester/sql/y2', QVariant(self.dock.lineEditY2.text()))
-        settings.setValue('/pgRoutingTester/sql/rule', QVariant(self.dock.lineEditRule.text()))
-        settings.setValue('/pgRoutingTester/sql/to_cost', QVariant(self.dock.lineEditToCost.text()))
+        settings.setValue('/pgRoutingLayer/sql/edge_table', QVariant(self.dock.lineEditTable.text()))
+        settings.setValue('/pgRoutingLayer/sql/geometry', QVariant(self.dock.lineEditGeometry.text()))
+        settings.setValue('/pgRoutingLayer/sql/id', QVariant(self.dock.lineEditId.text()))
+        settings.setValue('/pgRoutingLayer/sql/source', QVariant(self.dock.lineEditSource.text()))
+        settings.setValue('/pgRoutingLayer/sql/target', QVariant(self.dock.lineEditTarget.text()))
+        settings.setValue('/pgRoutingLayer/sql/cost', QVariant(self.dock.lineEditCost.text()))
+        settings.setValue('/pgRoutingLayer/sql/reverse_cost', QVariant(self.dock.lineEditReverseCost.text()))
+        settings.setValue('/pgRoutingLayer/sql/x1', QVariant(self.dock.lineEditX1.text()))
+        settings.setValue('/pgRoutingLayer/sql/y1', QVariant(self.dock.lineEditY1.text()))
+        settings.setValue('/pgRoutingLayer/sql/x2', QVariant(self.dock.lineEditX2.text()))
+        settings.setValue('/pgRoutingLayer/sql/y2', QVariant(self.dock.lineEditY2.text()))
+        settings.setValue('/pgRoutingLayer/sql/rule', QVariant(self.dock.lineEditRule.text()))
+        settings.setValue('/pgRoutingLayer/sql/to_cost', QVariant(self.dock.lineEditToCost.text()))
         
-        settings.setValue('/pgRoutingTester/ids', QVariant(self.dock.lineEditIds.text()))
-        settings.setValue('/pgRoutingTester/source_id', QVariant(self.dock.lineEditSourceId.text()))
-        settings.setValue('/pgRoutingTester/source_pos', QVariant(self.dock.lineEditSourcePos.text()))
-        settings.setValue('/pgRoutingTester/target_id', QVariant(self.dock.lineEditTargetId.text()))
-        settings.setValue('/pgRoutingTester/target_pos', QVariant(self.dock.lineEditTargetPos.text()))
-        settings.setValue('/pgRoutingTester/target_ids', QVariant(self.dock.lineEditTargetIds.text()))
-        settings.setValue('/pgRoutingTester/distance', QVariant(self.dock.lineEditDistance.text()))
-        settings.setValue('/pgRoutingTester/paths', QVariant(self.dock.lineEditPaths.text()))
-        settings.setValue('/pgRoutingTester/directed', QVariant(self.dock.checkBoxDirected.isChecked()))
-        settings.setValue('/pgRoutingTester/has_reverse_cost', QVariant(self.dock.checkBoxHasReverseCost.isChecked()))
-        settings.setValue('/pgRoutingTester/turn_restrict_sql', QVariant(self.dock.plainTextEditTurnRestrictSql.toPlainText()))
+        settings.setValue('/pgRoutingLayer/ids', QVariant(self.dock.lineEditIds.text()))
+        settings.setValue('/pgRoutingLayer/source_id', QVariant(self.dock.lineEditSourceId.text()))
+        settings.setValue('/pgRoutingLayer/source_pos', QVariant(self.dock.lineEditSourcePos.text()))
+        settings.setValue('/pgRoutingLayer/target_id', QVariant(self.dock.lineEditTargetId.text()))
+        settings.setValue('/pgRoutingLayer/target_pos', QVariant(self.dock.lineEditTargetPos.text()))
+        settings.setValue('/pgRoutingLayer/target_ids', QVariant(self.dock.lineEditTargetIds.text()))
+        settings.setValue('/pgRoutingLayer/distance', QVariant(self.dock.lineEditDistance.text()))
+        settings.setValue('/pgRoutingLayer/paths', QVariant(self.dock.lineEditPaths.text()))
+        settings.setValue('/pgRoutingLayer/directed', QVariant(self.dock.checkBoxDirected.isChecked()))
+        settings.setValue('/pgRoutingLayer/has_reverse_cost', QVariant(self.dock.checkBoxHasReverseCost.isChecked()))
+        settings.setValue('/pgRoutingLayer/turn_restrict_sql', QVariant(self.dock.plainTextEditTurnRestrictSql.toPlainText()))
