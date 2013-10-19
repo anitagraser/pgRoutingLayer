@@ -75,10 +75,10 @@ class Function(FunctionBase):
     def draw(self, rows, con, args, geomType, canvasItemList, mapCanvas):
         resultAreaRubberBand = canvasItemList['area']
         trans = None
-        if mapCanvas.mapRenderer().hasCrsTransformEnabled:
-            canvasCrs = mapCanvas.mapRenderer().destinationSrs()
+        if mapCanvas.hasCrsTransformEnabled():
+            canvasCrs = Utils.getDestinationCrs(mapCanvas.mapRenderer())
             layerCrs = QgsCoordinateReferenceSystem()
-            layerCrs.createFromEpsg(args['srid'])
+            Utils.createFromSrid(layerCrs, args['srid'])
             trans = QgsCoordinateTransform(layerCrs, canvasCrs)
         
         # return columns are 'x', 'y'

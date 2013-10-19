@@ -25,6 +25,7 @@ import psycopg2
 import psycopg2.extensions # for isolation levels
 
 from .. import dbConnection as DbConn
+from .. import pgRoutingLayer_utils as Utils
 
 import re
 
@@ -117,11 +118,13 @@ class Connection(DbConn.Connection):
 		if not settings.contains( "database" ): # non-existent entry?
 			raise DbError( 'there is no defined database connection "%s".' % selected )
 	
-		get_value_str = lambda x: unicode(settings.value(x).toString())
+		get_value_str = lambda x: unicode(settings.value(x) if Utils.isSIPv2() else settings.value(x).toString())
 		host, port, database, username, password = map(get_value_str, ["host", "port", "database", "username", "password"])
 
 		# qgis1.5 use 'savePassword' instead of 'save' setting
-		if not ( settings.value("save").toBool() or settings.value("savePassword").toBool() ):
+		isSave = settings.value("save") if Utils.isSIPv2() else settings.value("save").toBool()
+		isSavePassword = settings.value("savePassword") if Utils.isSIPv2() else settings.value("savePassword").toBool()
+		if not ( isSave or isSavePassword ):
 			(password, ok) = QInputDialog.getText(parent, "Enter password", 'Enter password for connection "%s":' % selected, QLineEdit.Password)
 			if not ok: return
 
