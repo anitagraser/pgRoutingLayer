@@ -4,7 +4,7 @@ description=Dockable widget that adds pgRouting layers
 version=2.0.0
 qgisMinimumVersion=1.7
 qgisMaximumVersion=2.99
-authorName=Anita Graser
+author=Anita Graser
 email=anitagraser@gmx.at
 changelog=2.0
     - port to 2.0 API by Ko Nagase
