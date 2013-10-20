@@ -35,7 +35,7 @@ class Function(FunctionBase):
     
     def prepare(self, con, args, geomType, canvasItemList):
         resultAreaRubberBand = canvasItemList['area']
-        resultAreaRubberBand.reset(True)
+        resultAreaRubberBand.reset(Utils.getRubberBandType(True))
         query = """
         CREATE TEMPORARY TABLE node AS
             SELECT id,

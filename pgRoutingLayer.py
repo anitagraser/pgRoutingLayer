@@ -108,6 +108,8 @@ class PgRoutingLayer:
         resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), Utils.getRubberBandType(True))
         resultAreaRubberBand.setColor(Qt.magenta)
         resultAreaRubberBand.setWidth(2)
+        if not Utils.isQGISv1():
+            resultAreaRubberBand.setBrushStyle(Qt.Dense4Pattern)
         self.canvasItemList['area'] = resultAreaRubberBand
         
     def initGui(self):
