@@ -3,7 +3,7 @@
 A plugin for QGIS by Anita Graser and Ko Nagase
 
 * project home and bug tracker: https://github.com/anitagraser/pgRoutingLayer
-* plugin repository: none yet
+* plugin repository: http://plugins.qgis.org/plugins
 
 
 ## What is the goal
@@ -39,11 +39,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 ## Installation
 
-To install this plugin, download the zipped repository from https://github.com/anitagraser/pgRoutingLayer/zipball/master
-
-Unpack the zip file into your ~/.qgis2/python/plugins folder.
-
-After a restart of QGIS, you should see the plugin available and activated in Plugin Manager.
+This plugin can be installed using the QGIS Plugin Manager. You will have to enable "experimental" plugins.
 
 ### Dependencies
 
