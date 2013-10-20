@@ -4,7 +4,6 @@ A plugin for QGIS by Anita Graser and Ko Nagase
 
 * project home and bug tracker: https://github.com/anitagraser/pgRoutingLayer
 * plugin repository: none yet
-* Wiki: https://github.com/anitagraser/pgRoutingLayer/wiki
 
 
 ## What is the goal
