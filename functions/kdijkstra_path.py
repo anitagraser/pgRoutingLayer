@@ -71,20 +71,21 @@ class Function(FunctionBase):
                 rubberBand.setWidth(4)
             
             if args['result_edge_id'] != -1:
-                #query2 = """
-                #    SELECT ST_AsText(%(transform_s)s%(geometry)s%(transform_e)s) FROM %(edge_table)s
-                #        WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
-                #    UNION
-                #    SELECT ST_AsText(%(transform_s)sST_Reverse(%(geometry)s)%(transform_e)s) FROM %(edge_table)s
-                #        WHERE %(target)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d;
-                #""" % args
                 query2 = """
-                    SELECT ST_AsText(%(transform_s)sST_Reverse(%(geometry)s)%(transform_e)s) FROM %(edge_table)s
+                    SELECT ST_AsText(%(transform_s)s%(geometry)s%(transform_e)s) FROM %(edge_table)s
                         WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
                     UNION
-                    SELECT ST_AsText(%(transform_s)s%(geometry)s%(transform_e)s) FROM %(edge_table)s
+                    SELECT ST_AsText(%(transform_s)sST_Reverse(%(geometry)s)%(transform_e)s) FROM %(edge_table)s
                         WHERE %(target)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d;
                 """ % args
+                ## pgRouting <= 2.0.0rc1
+                #query2 = """
+                #    SELECT ST_AsText(%(transform_s)sST_Reverse(%(geometry)s)%(transform_e)s) FROM %(edge_table)s
+                #        WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
+                #    UNION
+                #    SELECT ST_AsText(%(transform_s)s%(geometry)s%(transform_e)s) FROM %(edge_table)s
+                #        WHERE %(target)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d;
+                #""" % args
                 ##QMessageBox.information(self.ui, self.ui.windowTitle(), query2)
                 cur2.execute(query2)
                 row2 = cur2.fetchone()

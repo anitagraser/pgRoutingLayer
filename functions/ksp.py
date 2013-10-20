@@ -71,8 +71,8 @@ class Function(FunctionBase):
                 rubberBand.setColor(QColor(255, 0, 0, 128))
                 rubberBand.setWidth(4)
             
-            #if args['result_edge_id'] != -1:
-            if args['result_edge_id'] != 0:
+            if args['result_edge_id'] != -1:
+            #if args['result_edge_id'] != 0: # pgRouting <= 2.0.0rc1
                 query2 = """
                     SELECT ST_AsText(%(transform_s)s%(geometry)s%(transform_e)s) FROM %(edge_table)s
                         WHERE %(source)s = %(result_node_id)d AND %(id)s = %(result_edge_id)d
