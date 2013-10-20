@@ -4,6 +4,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 import qgis.core
+import pgRoutingLayer_utils as Utils
 
 class ConnectionManager:
 
@@ -129,7 +130,7 @@ class Connection:
 
 			# set as default in QSettings
 			settings = QSettings()
-			settings.setValue( "/%s/connections/selected" % conn.getSettingsKey(), QVariant(selected) )
+			settings.setValue( "/%s/connections/selected" % conn.getSettingsKey(), selected )
 
 			return conn
 
