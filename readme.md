@@ -13,7 +13,21 @@ PgRouting Layer is a plugin for QGIS that serves as a GUI for pgRouting - a popu
 
 ## What this plugin currently does
 
-Currently, it supports pgRouting's Dijkstra shortest_path() function only.
+PgRoutingLayer supports the following functions:
+
+* alphashape
+* astar
+* bdAstar
+* bdDijkstra
+* dijkstra
+* drivingDistance
+* kdijkstra_cost
+* kdijkstra_path
+* ksp
+* shootingStar
+* trsp_edge
+* trsp_vertex
+* tsp_euclid
 
 ## License
 
@@ -26,7 +40,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 To install this plugin, download the zipped repository from https://github.com/anitagraser/pgRoutingLayer/zipball/master
 
-Unpack the zip file into your ~/.qgis/python/plugins folder.
+Unpack the zip file into your ~/.qgis2/python/plugins folder.
 
 After a restart of QGIS, you should see the plugin available and activated in Plugin Manager.
 
