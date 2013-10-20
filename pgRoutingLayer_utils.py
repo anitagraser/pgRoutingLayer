@@ -60,3 +60,12 @@ def createFromSrid(crs, srid):
         return crs.createFromEpsg(srid)
     else:
         return crs.createFromSrid(srid)
+
+def getRubberBandType(isPolygon):
+    if isQGISv1():
+        return isPolygon
+    else:
+        if isPolygon:
+            return QGis.Polygon
+        else:
+            return QGis.Line

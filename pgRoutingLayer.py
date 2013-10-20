@@ -90,10 +90,10 @@ class PgRoutingLayer:
         self.targetIdVertexMarker.setColor(Qt.green)
         self.targetIdVertexMarker.setPenWidth(2)
         self.targetIdVertexMarker.setVisible(False)
-        self.sourceIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
+        self.sourceIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), Utils.getRubberBandType(False))
         self.sourceIdRubberBand.setColor(Qt.cyan)
         self.sourceIdRubberBand.setWidth(4)
-        self.targetIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
+        self.targetIdRubberBand = QgsRubberBand(self.iface.mapCanvas(), Utils.getRubberBandType(False))
         self.targetIdRubberBand.setColor(Qt.yellow)
         self.targetIdRubberBand.setWidth(4)
         
@@ -101,11 +101,11 @@ class PgRoutingLayer:
         self.canvasItemList['markers'] = []
         self.canvasItemList['annotations'] = []
         self.canvasItemList['paths'] = []
-        resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), False)
+        resultPathRubberBand = QgsRubberBand(self.iface.mapCanvas(), Utils.getRubberBandType(False))
         resultPathRubberBand.setColor(QColor(255, 0, 0, 128))
         resultPathRubberBand.setWidth(4)
         self.canvasItemList['path'] = resultPathRubberBand
-        resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), True)
+        resultAreaRubberBand = QgsRubberBand(self.iface.mapCanvas(), Utils.getRubberBandType(True))
         resultAreaRubberBand.setColor(Qt.magenta)
         resultAreaRubberBand.setWidth(2)
         self.canvasItemList['area'] = resultAreaRubberBand
@@ -248,7 +248,7 @@ class PgRoutingLayer:
             self.toggleSelectButton(self.dock.buttonSelectSourceId)
             self.dock.lineEditSourceId.setText("")
             self.sourceIdVertexMarker.setVisible(False)
-            self.sourceIdRubberBand.reset(False)
+            self.sourceIdRubberBand.reset(Utils.getRubberBandType(False))
             self.iface.mapCanvas().setMapTool(self.sourceIdEmitPoint)
         else:
             self.iface.mapCanvas().unsetMapTool(self.sourceIdEmitPoint)
@@ -284,7 +284,7 @@ class PgRoutingLayer:
             self.toggleSelectButton(self.dock.buttonSelectTargetId)
             self.dock.lineEditTargetId.setText("")
             self.targetIdVertexMarker.setVisible(False)
-            self.targetIdRubberBand.reset(False)
+            self.targetIdRubberBand.reset(Utils.getRubberBandType(False))
             self.iface.mapCanvas().setMapTool(self.targetIdEmitPoint)
         else:
             self.iface.mapCanvas().unsetMapTool(self.targetIdEmitPoint)
@@ -491,8 +491,8 @@ class PgRoutingLayer:
         self.sourceIdVertexMarker.setVisible(False)
         self.dock.lineEditTargetId.setText("")
         self.targetIdVertexMarker.setVisible(False)
-        self.sourceIdRubberBand.reset(False)
-        self.targetIdRubberBand.reset(False)
+        self.sourceIdRubberBand.reset(Utils.getRubberBandType(False))
+        self.targetIdRubberBand.reset(Utils.getRubberBandType(False))
         for marker in self.canvasItemList['markers']:
             marker.setVisible(False)
         self.canvasItemList['markers'] = []
@@ -500,10 +500,10 @@ class PgRoutingLayer:
             anno.setVisible(False)
         self.canvasItemList['annotations'] = []
         for path in self.canvasItemList['paths']:
-            path.reset(False)
+            path.reset(Utils.getRubberBandType(False))
         self.canvasItemList['paths'] = []
-        self.canvasItemList['path'].reset(False)
-        self.canvasItemList['area'].reset(True)
+        self.canvasItemList['path'].reset(Utils.getRubberBandType(False))
+        self.canvasItemList['area'].reset(Utils.getRubberBandType(True))
         
     def toggleSelectButton(self, button):
         selectButtons = [

@@ -3,6 +3,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 from qgis.gui import *
 import psycopg2
+from .. import pgRoutingLayer_utils as Utils
 from FunctionBase import FunctionBase
 
 class Function(FunctionBase):
@@ -37,7 +38,7 @@ class Function(FunctionBase):
     def prepare(self, con, args, geomType, canvasItemList):
         resultPathsRubberBands = canvasItemList['paths']
         for path in resultPathsRubberBands:
-            path.reset(False)
+            path.reset(Utils.getRubberBandType(False))
         canvasItemList['paths'] = []
     
     def getQuery(self, args):
@@ -66,7 +67,7 @@ class Function(FunctionBase):
                     resultPathsRubberBands.append(rubberBand)
                     rubberBand = None
                 
-                rubberBand = QgsRubberBand(mapCanvas, False)
+                rubberBand = QgsRubberBand(mapCanvas, Utils.getRubberBandType(False))
                 rubberBand.setColor(QColor(255, 0, 0, 128))
                 rubberBand.setWidth(4)
             
