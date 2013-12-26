@@ -438,7 +438,7 @@ class PgRoutingLayer:
                 FROM %(edge_table)s
                 JOIN
                 (%(path_query)s) AS result
-                ON %(edge_table)s.%(id)s = result.edge""" % args
+                ON %(edge_table)s.%(id)s = result.edge ORDER BY result.seq""" % args
         
         query = query.replace('\n', ' ')
         query = re.sub(r'\s+', ' ', query)
