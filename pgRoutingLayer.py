@@ -147,6 +147,7 @@ class PgRoutingLayer:
         QObject.connect(self.dock.checkBoxHasReverseCost, SIGNAL("stateChanged(int)"), self.updateReverseCostEnabled)
         QObject.connect(self.dock.buttonRun, SIGNAL("clicked()"), self.run)
         QObject.connect(self.dock.buttonExport, SIGNAL("clicked()"), self.export)
+        QObject.connect(self.dock.buttonExportMerged, SIGNAL("clicked()"), self.exportMerged)
         QObject.connect(self.dock.buttonClear, SIGNAL("clicked()"), self.clear)
         
         #populate the combo with connections
@@ -410,7 +411,7 @@ class PgRoutingLayer:
                 except:
                     QMessageBox.critical(self.dock, self.dock.windowTitle(),
                         'server closed the connection unexpectedly')
-        
+
     def export(self):
         QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
         
@@ -438,7 +439,7 @@ class PgRoutingLayer:
                 FROM %(edge_table)s
                 JOIN
                 (%(path_query)s) AS result
-                ON %(edge_table)s.%(id)s = result.edge ORDER BY result.seq""" % args
+                ON %(edge_table)s.%(id)s = result.edge ORDER BY result.seq """ % args
         
         query = query.replace('\n', ' ')
         query = re.sub(r'\s+', ' ', query)
@@ -453,6 +454,77 @@ class PgRoutingLayer:
             
             uri = db.getURI()
             uri.setDataSource("", "(" + query + ")", args['geometry'], "", "result_seq")
+            
+            # add vector layer to map
+            layerName = function.getName() + " - from " + args['source_id'] + " to "
+            if 'target_id' in args:
+                layerName += args['target_id']
+            else:
+                layerName += "many"
+            
+            vl = self.iface.addVectorLayer(uri.uri(), layerName, db.getProviderName())
+            
+        except psycopg2.DatabaseError, e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
+            
+        except SystemError, e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.critical(self.dock, self.dock.windowTitle(), '%s' % e)
+            
+        finally:
+            QApplication.restoreOverrideCursor()
+            if db and db.con:
+                try:
+                    db.con.close()
+                except:
+                    QMessageBox.critical(self.dock, self.dock.windowTitle(),
+                        'server closed the connection unexpectedly')
+
+                        
+    def exportMerged(self):
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+        
+        function = self.functions[str(self.dock.comboBoxFunction.currentText())]
+        args = self.getArguments(function.getControlNames())
+        
+        empties = []
+        for key in args.keys():
+            if not args[key]:
+                empties.append(key)
+        
+        if len(empties) > 0:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.warning(self.dock, self.dock.windowTitle(),
+                'Following argument is not specified.\n' + ','.join(empties))
+            return
+        
+        args['path_query'] = function.getQuery(args)
+        
+        query = """SELECT 1 AS id, ST_LINEMERGE(geom) as geom, ST_LENGTH(ST_LINEMERGE(geom)) as route_length FROM (
+            SELECT ST_UNION(geom) AS geom FROM (
+            SELECT %(edge_table)s.*,
+                result.seq AS result_seq,
+                result.node AS result_node,
+                result.cost AS result_cost
+                FROM %(edge_table)s
+                JOIN
+                (%(path_query)s) AS result
+                ON %(edge_table)s.%(id)s = result.edge ORDER BY result.seq ) as foo ) as bar""" % args
+        
+        query = query.replace('\n', ' ')
+        query = re.sub(r'\s+', ' ', query)
+        query = query.replace('( ', '(')
+        query = query.replace(' )', ')')
+        query = query.strip()
+        ##QMessageBox.information(self.dock, self.dock.windowTitle(), query)
+        
+        try:
+            dados = str(self.dock.comboConnections.currentText())
+            db = self.actionsDb[dados].connect()
+            
+            uri = db.getURI()
+            uri.setDataSource("", "(" + query + ")", args['geometry'], "", "id")
             
             # add vector layer to map
             layerName = function.getName() + " - from " + args['source_id'] + " to "

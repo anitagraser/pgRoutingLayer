@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>230</width>
-    <height>526</height>
+    <width>218</width>
+    <height>592</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,15 +15,6 @@
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QVBoxLayout" name="verticalLayout">
-    <property name="spacing">
-     <number>3</number>
-    </property>
-    <property name="sizeConstraint">
-     <enum>QLayout::SetMaximumSize</enum>
-    </property>
-    <property name="margin">
-     <number>6</number>
-    </property>
     <item>
      <layout class="QGridLayout" name="gridLayoutBase">
       <property name="spacing">
@@ -167,7 +158,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>185</width>
+            <width>167</width>
             <height>264</height>
            </rect>
           </property>
@@ -354,6 +345,19 @@
       <property name="spacing">
        <number>3</number>
       </property>
+      <item row="7" column="0">
+       <widget class="QLabel" name="labelPaths">
+        <property name="text">
+         <string>paths</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QLineEdit" name="lineEditPaths"/>
+      </item>
+      <item row="5" column="1">
+       <widget class="QLineEdit" name="lineEditTargetIds"/>
+      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="labelSourceId">
         <property name="locale">
@@ -627,9 +631,6 @@ _sql</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
-       <widget class="QLineEdit" name="lineEditTargetIds"/>
-      </item>
       <item row="5" column="2">
        <widget class="QToolButton" name="buttonSelectTargetIds">
         <property name="sizePolicy">
@@ -672,16 +673,6 @@ _sql</string>
          <locale language="English" country="UnitedStates"/>
         </property>
        </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QLabel" name="labelPaths">
-        <property name="text">
-         <string>paths</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="1">
-       <widget class="QLineEdit" name="lineEditPaths"/>
       </item>
      </layout>
     </item>
@@ -732,6 +723,35 @@ _sql</string>
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="buttonClear">
+        <property name="minimumSize">
+         <size>
+          <width>70</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="locale">
+         <locale language="English" country="UnitedStates"/>
+        </property>
+        <property name="text">
+         <string>Clear</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <item>
        <widget class="QPushButton" name="buttonExport">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -760,24 +780,15 @@ _sql</string>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="buttonClear">
+       <widget class="QPushButton" name="buttonExportMerged">
         <property name="minimumSize">
          <size>
           <width>70</width>
           <height>0</height>
          </size>
         </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
-        </property>
         <property name="text">
-         <string>Clear</string>
+         <string>Export merged</string>
         </property>
        </widget>
       </item>
@@ -819,8 +830,6 @@ _sql</string>
   <tabstop>checkBoxHasReverseCost</tabstop>
   <tabstop>plainTextEditTurnRestrictSql</tabstop>
   <tabstop>buttonRun</tabstop>
-  <tabstop>buttonExport</tabstop>
-  <tabstop>buttonClear</tabstop>
  </tabstops>
  <resources/>
  <connections/>
